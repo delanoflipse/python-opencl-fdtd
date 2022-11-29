@@ -1,0 +1,24 @@
+import math
+
+from lib.constants import C_AIR
+
+# ROOM SIZE
+WIDTH = 3.6
+DEPTH = 4.3
+HEIGHT = 2.4
+
+# SIMULATION
+MAX_FREQUENCY = 1024
+
+# --------- CALCULATED ---------
+MIN_WAVELENGTH = C_AIR / MAX_FREQUENCY
+DELTA_SPACE = DX = MIN_WAVELENGTH / 16 # 16 is slightly arbitrary
+DELTA_TIME = DT = DX / (math.sqrt(3) * C_AIR) # 3 => 3D
+DT_OVER_DX = DT / DX
+
+# CALCULATED
+WIDTH_PARTS = math.floor(WIDTH / DX)
+HEIGHT_PARTS = math.floor(HEIGHT / DX)
+DEPTH_PARTS = math.floor(DEPTH / DX)
+GRID_SIZE = WIDTH_PARTS * HEIGHT_PARTS * DEPTH_PARTS
+GRID_SHAPE = (WIDTH_PARTS, HEIGHT_PARTS, DEPTH_PARTS)
