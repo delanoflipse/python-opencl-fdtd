@@ -42,7 +42,7 @@ def velocity_step(pressure, velocity_x, velocity_y, velocity_z):
 
 KAPPA_DT_DX = -1 * KAPPA * DT_OVER_DX    
 @njit(parallel=True)
-def parallel_pressure_step(pressure, velocity_x, velocity_y, velocity_z):
+def pressure_step(pressure, velocity_x, velocity_y, velocity_z):
   for w in prange(pressure.shape[0]):
     for h in prange(pressure.shape[1]):
       for d in prange(pressure.shape[2]):
@@ -53,28 +53,10 @@ def parallel_pressure_step(pressure, velocity_x, velocity_y, velocity_z):
         dv = dvx + dvy + dvz
         dp = KAPPA_DT_DX * dv
         pressure[w,h,d] = current_pressure + dp
-    
-# @cuda.jit
-# def cuda_pressure_step_kernel(pressure, velocity_x, velocity_y, velocity_z):
-#   w,h,d = cuda.grid(3)
-  
-#   if w < pressure.shape[0] and h < pressure.shape[1] and d < pressure.shape[2]:
-#       pressure[w,h,d] += 1
-
-# def cuda_pressure_step(pressure, velocity_x, velocity_y, velocity_z):
-#   threadsperblock = 32
-#   blockspergrid = (pressure.size + (threadsperblock - 1))
-#   vx = cuda.to_device(velocity_x)
-#   vy = cuda.to_device(velocity_y)
-#   vz = cuda.to_device(velocity_z)
-#   cuda_pressure_step_kernel[blockspergrid, threadsperblock](pressure, vx, vy, vz)
-#   cuda.synchronize()
 
 def simulation_step():
   velocity_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z)
-  parallel_pressure_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z)
-  # pressure_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z)
-  # cuda_pressure_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z)
+  pressure_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z)
   
   if sim.time < 1 / 200:
     sim.pressure[WIDTH_PARTS // 2, HEIGHT_PARTS // 2, DEPTH_PARTS // 2] = math.sin(sim.time)
