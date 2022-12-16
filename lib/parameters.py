@@ -2,8 +2,8 @@ import math
 
 from lib.constants import C_AIR
 
-# SIMULATION
-MAX_FREQUENCY = 400
+# SIMULATION PARAMETERS
+MAX_FREQUENCY = 1000
 AIR_DAMPENING = 1
 
 # --------- CALCULATED ---------

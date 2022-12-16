@@ -11,6 +11,7 @@ BIT_5 = 1 << 5
 
 
 @njit(parallel=True)
+# set neighbour flags for given geometry
 def populate_neighbours(geometry, neighbours) -> None:
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):

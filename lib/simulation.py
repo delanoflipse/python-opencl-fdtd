@@ -107,10 +107,10 @@ class SimulationState:
 
   def step(self) -> None:
     # determine source value
-    sigma = 0.0005
+    sigma = 0.0004
     variance = sigma * sigma
-    frequency = 20 + MAX_FREQUENCY / 2
-    t0 = 4/frequency
+    frequency = 20 + MAX_FREQUENCY
+    t0 = 0.005 + 4/frequency
     t = self.time - t0
     cos_factor = math.cos(2 * math.pi * t * frequency)
     # sqrt_variance = math.sqrt(2 * math.pi * variance)

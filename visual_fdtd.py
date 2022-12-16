@@ -16,10 +16,10 @@ ax_val = plt.subplot2grid(axes_shape, (0, 1))
 ax_rec = plt.subplot2grid(axes_shape, (1, 1))
 ax_max = plt.subplot2grid(axes_shape, (2, 1))
 
-# sim = bell_box(False)
-# slice_h = sim.scale(1.32)
-sim = shoebox_room()
-slice_h = sim.scale(1.82)
+sim = bell_box(False)
+slice_h = sim.scale(1.32)
+# sim = shoebox_room()
+# slice_h = sim.scale(1.82)
 
 x_data, rec_data, source_data, max_data = [], [], [], []
 
@@ -50,24 +50,22 @@ fig.tight_layout()
 
 maximum = 1e-32
 last_maximum = 1e-32
-signal_sum = 0.0
 
 
 def animate(i) -> None:
-  global maximum, last_maximum, signal_sum
+  global maximum, last_maximum
 
   for _ in range(2):
     sim.step()
 
   x_data.append(sim.time)
-  signal_sum += sim.signal
-  rec_data.append(signal_sum)
+  rec_data.append(sim.signal)
 
   source_data.append(
-      sim.analysis[sim.width_parts // 2, slice_h, sim.depth_parts // 2])
+      sim.pressure[sim.width_parts // 2, slice_h, sim.depth_parts // 2])
 
-  slice = sim.analysis[:, slice_h, :]
-  # slice = sim.pressure[:, slice_h, :]
+  # slice = sim.analysis[:, slice_h, :]
+  slice = sim.pressure[:, slice_h, :]
 
   maximum = max(abs(slice.min()), abs(slice.max()))
   max_data.append(maximum)
