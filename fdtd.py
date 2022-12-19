@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from lib.impulses import GaussianModulatedImpulseGenerator
 from lib.parameters import SAMPLING_FREQUENCY
 from lib.scene import shoebox_room
 
@@ -7,6 +8,7 @@ iterations_per_step = 4000
 count = 40000 // iterations_per_step
 
 sim = shoebox_room()
+sim.generator = GaussianModulatedImpulseGenerator()
 print(f'w: {sim.width_parts} h:{sim.height_parts} d:{sim.depth_parts}. Total: {sim.grid_size}. {SAMPLING_FREQUENCY}hz')
 print('Setting up simulation...')
 sim.setup()

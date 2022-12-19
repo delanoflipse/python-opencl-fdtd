@@ -1,18 +1,21 @@
+"""Module Impulse contains all possible impulse generators"""
 import math
 
 from lib.constants import C_AIR
 
 # SIMULATION PARAMETERS
 MIN_FREQUENCY = 20
-MAX_FREQUENCY = 500
+MAX_FREQUENCY = 400
 AIR_DAMPENING = 1
+OVERSAMPLING = 16  # should be >= 10
 
 # --------- CALCULATED ---------
 SAMPLING_FREQUENCY = 2 * MAX_FREQUENCY
 MIN_WAVELENGTH = C_AIR / SAMPLING_FREQUENCY
-DELTA_SPACE = DX = MIN_WAVELENGTH / 16  # 16 is slightly arbitrary
+DELTA_SPACE = DX = MIN_WAVELENGTH / OVERSAMPLING
 DELTA_TIME = DT = DX / (math.sqrt(3) * C_AIR)  # 3 => 3D
 DT_OVER_DX = DT / DX
+DT_FREQUENCY = 1 / DT
 
 LAMBDA_COURANT = (C_AIR * DT) / DX
 LAMBDA_2 = LAMBDA_COURANT * LAMBDA_COURANT

@@ -6,6 +6,7 @@ from numba import njit, prange
 
 import pyopencl as cl
 from lib.geometry import populate_neighbours
+from lib.impulses import ImpulseGenerator
 from lib.parameters import DT, DX, LAMBDA_COURANT, MAX_FREQUENCY, MIN_FREQUENCY
 
 WALL_FLAG = 1 << 0
@@ -39,11 +40,23 @@ class SimulationState:
     self.rms = create_grid(self.grid_shape, "float64")
     self.time = 0
     self.iteration = 0
+    self.beta = 0.5
     self.signal_set = []
+    self.time_set = []
+    self.generator: ImpulseGenerator = None
     self.signal_frequency = MIN_FREQUENCY
 
   def scale(self, size: float) -> int:
     return int(round(size / DX))
+
+  def set_frequency(self, frequency: float) -> None:
+    self.signal_frequency = frequency
+
+  def set_beta(self, beta: float) -> None:
+    # https://www.acoustic-supplies.com/absorption-coefficient-chart/
+    if hasattr(self, "kernel"):
+      self.kernel.compact.set_arg(9, np.float64(beta))
+    self.beta = beta
 
   def setup(self) -> None:
     populate_neighbours(self.geometry, self.neighbours)
@@ -53,9 +66,8 @@ class SimulationState:
     ctx = cl.create_some_context(interactive=False)
     print(f'Platform: {platforms[0].name}')
     queue = cl.CommandQueue(ctx)
-    mf = cl.mem_flags
-    r_flag = mf.READ_ONLY | mf.COPY_HOST_PTR
-    rw_flag = mf.READ_WRITE | mf.COPY_HOST_PTR
+    r_flag = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
+    rw_flag = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
     a_buf = cl.Buffer(ctx, rw_flag, hostbuf=self.analysis)
     rms_buf = cl.Buffer(ctx, rw_flag, hostbuf=self.rms)
     pv_buf = cl.Buffer(ctx, r_flag, hostbuf=self.pressure_previous)
@@ -82,7 +94,7 @@ class SimulationState:
     compact_step_kernel.set_arg(7, np.uint32(self.depth_parts))
 
     compact_step_kernel.set_arg(8, np.float64(LAMBDA_COURANT))
-    compact_step_kernel.set_arg(9, np.float64(1.8))
+    compact_step_kernel.set_arg(9, np.float64(self.beta))
     compact_step_kernel.set_arg(10, np.float64(0))
 
     # analysis step kernel
@@ -112,12 +124,6 @@ class SimulationState:
     self.kernel.n_buf = n_buf
 
   def step(self, count: int = 1) -> None:
-    # determine source value
-    sigma = 0.002
-    variance = sigma * sigma
-    frequency = self.signal_frequency
-    t_0 = 8 * sigma
-
     #  initial write from host to device
     cl.enqueue_copy(self.kernel.queue, self.kernel.pv_buf,
                     self.pressure_previous,
@@ -130,14 +136,17 @@ class SimulationState:
                                  is_blocking=False)
     wait_event = last_event
     for i in range(count):
-      # calulate new signal value
-      t = self.time - t_0
-      cos_factor = math.cos(2 * math.pi * t * frequency)
-      # sqrt_variance = math.sqrt(2 * math.pi * variance)
-      exp_factor = math.exp(-(t * t) / (2 * variance))
-      signal = cos_factor * (exp_factor)
-      self.signal_set.append(signal)
+      signal = 0.0
+
+      if self.generator != None:
+        signal = self.generator.generate(
+            self.time, self.iteration, self.signal_frequency)
+
       self.kernel.compact.set_arg(10, np.float64(signal))
+
+      # add samples
+      self.signal_set.append(signal)
+      self.time_set.append(self.time)
 
       # run compact step
       kernel_event1 = cl.enqueue_nd_range_kernel(self.kernel.queue, self.kernel.compact, [
