@@ -3,25 +3,33 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from lib.parameters import DT
 from lib.scene import bell_box, shoebox_room
+
+ITERATIONS_PER_STEP = 20
 
 file_dir = os.path.dirname(__file__)
 style_location = os.path.join(file_dir, './styles/poster.mplstyle')
 plt.style.use(style_location)
 
-axes_shape = (3, 2)
+axes_shape = (3, 3)
 fig = plt.gcf()
 ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
 ax_val = plt.subplot2grid(axes_shape, (0, 1))
 ax_rec = plt.subplot2grid(axes_shape, (1, 1))
 ax_max = plt.subplot2grid(axes_shape, (2, 1))
+ax_fft_sig = plt.subplot2grid(axes_shape, (0, 2))
 
-sim = bell_box(False)
-slice_h = sim.scale(1.32)
-# sim = shoebox_room()
-# slice_h = sim.scale(1.82)
+recalc_axis = [ax_val, ax_rec, ax_max]
 
-x_data, rec_data, source_data, max_data = [], [], [], []
+# sim = bell_box(False)
+# slice_h = sim.scale(1.32)
+sim = shoebox_room()
+slice_h = sim.scale(1.82)
+
+sim.signal_frequency = 400
+
+x_data, source_data, max_data = [], [], []
 
 slice = sim.pressure[:, slice_h, :]
 y = np.arange(len(slice))
@@ -30,14 +38,16 @@ x = np.arange(len(slice[0]))
 slice_image = ax_sim.imshow(slice)
 color_bar = plt.colorbar(slice_image, ax=ax_sim)
 
-value_plot, = ax_val.plot(x_data, rec_data, "-")
-source_plot, = ax_rec.plot(x_data, source_data, "-")
-max_plot, = ax_max.plot(x_data, max_data, "-")
+value_plot, = ax_val.plot([], [], "-")
+source_plot, = ax_rec.plot([], [], "-")
+max_plot, = ax_max.plot([], [], "-")
+
+# fft_src_plot, = ax_fft_sig.plot([], [], "-")
 
 ax_sim.set_title("Simulation")
 ax_val.set_title("Input signal")
 ax_rec.set_title("Signal at Receiver")
-ax_max.set_title("Max value in slice")
+ax_fft_sig.set_title("FFT input signal")
 
 value_plot.axes.set_xlabel("Time (s)")
 value_plot.axes.set_ylabel("Relative Pressure (Pa)")
@@ -55,11 +65,12 @@ last_maximum = 1e-32
 def animate(i) -> None:
   global maximum, last_maximum
 
-  for _ in range(2):
-    sim.step()
+  sim.step(ITERATIONS_PER_STEP)
 
   x_data.append(sim.time)
-  rec_data.append(sim.signal)
+  # calc_rec = np.fft.fft(sim.signal_set, n=512)
+  # calc_rec_axis = np.fft.fftfreq(n=512, d=DT)
+  # fft_src_plot.set_data(calc_rec_axis, calc_rec.real)
 
   source_data.append(
       sim.pressure[sim.width_parts // 2, slice_h, sim.depth_parts // 2])
@@ -74,17 +85,13 @@ def animate(i) -> None:
     slice_image.set_clim(-maximum, maximum)
   last_maximum = maximum
 
-  value_plot.set_data(x_data, rec_data)
+  value_plot.set_data(x_data, sim.signal_set)
   source_plot.set_data(x_data, source_data)
   max_plot.set_data(x_data, max_data)
 
-  ax_val.relim()
-  ax_val.autoscale_view()
-
-  ax_max.relim()
-  ax_max.autoscale_view()
-  ax_rec.relim()
-  ax_rec.autoscale_view()
+  for ax in recalc_axis:
+    ax.relim()
+    ax.autoscale_view()
 
   fig.canvas.flush_events()
   print(i, sim.time, maximum)

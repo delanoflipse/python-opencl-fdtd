@@ -102,9 +102,10 @@ __kernel void compact_step(__global double *previous_pressure,
   pressure_next[i] = next_value;
 }
 
-__kernel void analysis_step(__global double *pressure,
+__kernel void analysis_step(__global double *pressure, __global double *rms,
                             __global double *analysis, __global char *geometry,
-                            uint size_w, uint size_h, uint size_d, double dt) {
+                            uint size_w, uint size_h, uint size_d, double dt,
+                            uint iteration) {
   size_t i = get_global_id(0);
   size_t w = (i / (size_h * size_d)) % size_w;
   size_t h = (i / (size_d)) % size_h;
@@ -123,7 +124,17 @@ __kernel void analysis_step(__global double *pressure,
   }
 
   double current_pressure = pressure[i];
-  analysis[i] += current_pressure * dt;
+  double rms_sum = rms[i] + current_pressure * current_pressure;
+  rms[i] = rms_sum;
+  double iteration_factor = 1.0 / ((double)(iteration));
+  // double rms_value = sqrt(iteration_factor * rms_sum);
+  analysis[i] = iteration_factor * rms_sum;
+  // analysis[i] = rms_value;
+  // analysis[i] = 20.0 * log10(rms_value);
+  // analysis[i] = 20.0 * log10(current_pressure);
+
+  // double current_pressure = pressure[i];
+  // analysis[i] += current_pressure * dt;
 
   // double current_max = analysis[i];
   // analysis[i] = max(fabs(current_pressure), current_max);

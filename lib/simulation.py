@@ -1,3 +1,4 @@
+from asyncio import wait_for
 import os
 import math
 import numpy as np
@@ -5,7 +6,7 @@ from numba import njit, prange
 
 import pyopencl as cl
 from lib.geometry import populate_neighbours
-from lib.parameters import DT, DX, LAMBDA_COURANT, MAX_FREQUENCY
+from lib.parameters import DT, DX, LAMBDA_COURANT, MAX_FREQUENCY, MIN_FREQUENCY
 
 WALL_FLAG = 1 << 0
 SOURCE_FLAG = 1 << 1
@@ -35,9 +36,11 @@ class SimulationState:
     self.pressure_previous = create_grid(self.grid_shape, "float64")
     self.pressure_next = create_grid(self.grid_shape, "float64")
     self.analysis = create_grid(self.grid_shape, "float64")
+    self.rms = create_grid(self.grid_shape, "float64")
     self.time = 0
     self.iteration = 0
-    self.signal = 0
+    self.signal_set = []
+    self.signal_frequency = MIN_FREQUENCY
 
   def scale(self, size: float) -> int:
     return int(round(size / DX))
@@ -54,6 +57,7 @@ class SimulationState:
     r_flag = mf.READ_ONLY | mf.COPY_HOST_PTR
     rw_flag = mf.READ_WRITE | mf.COPY_HOST_PTR
     a_buf = cl.Buffer(ctx, rw_flag, hostbuf=self.analysis)
+    rms_buf = cl.Buffer(ctx, rw_flag, hostbuf=self.rms)
     pv_buf = cl.Buffer(ctx, r_flag, hostbuf=self.pressure_previous)
     p_buf = cl.Buffer(ctx, r_flag, hostbuf=self.pressure)
     pn_buf = cl.Buffer(ctx, rw_flag, hostbuf=self.pressure_next)
@@ -86,11 +90,12 @@ class SimulationState:
 
     analysis_step_kernel.set_arg(0, p_buf)
     analysis_step_kernel.set_arg(1, a_buf)
-    analysis_step_kernel.set_arg(2, g_buf)
-    analysis_step_kernel.set_arg(3, np.uint32(self.width_parts))
-    analysis_step_kernel.set_arg(4, np.uint32(self.height_parts))
-    analysis_step_kernel.set_arg(5, np.uint32(self.depth_parts))
-    analysis_step_kernel.set_arg(6, np.float64(DT))
+    analysis_step_kernel.set_arg(2, rms_buf)
+    analysis_step_kernel.set_arg(3, g_buf)
+    analysis_step_kernel.set_arg(4, np.uint32(self.width_parts))
+    analysis_step_kernel.set_arg(5, np.uint32(self.height_parts))
+    analysis_step_kernel.set_arg(6, np.uint32(self.depth_parts))
+    analysis_step_kernel.set_arg(7, np.float64(DT))
 
     # setup object
     self.kernel = KernelProgram()
@@ -99,45 +104,76 @@ class SimulationState:
     self.kernel.compact = compact_step_kernel
     self.kernel.analysis = analysis_step_kernel
     self.kernel.a_buf = a_buf
+    self.kernel.rms_buf = rms_buf
     self.kernel.p_buf = p_buf
     self.kernel.pn_buf = pn_buf
     self.kernel.pv_buf = pv_buf
     self.kernel.g_buf = g_buf
     self.kernel.n_buf = n_buf
 
-  def step(self) -> None:
+  def step(self, count: int = 1) -> None:
     # determine source value
-    sigma = 0.0004
+    sigma = 0.002
     variance = sigma * sigma
-    frequency = 20 + MAX_FREQUENCY
-    t0 = 0.005 + 4/frequency
-    t = self.time - t0
-    cos_factor = math.cos(2 * math.pi * t * frequency)
-    # sqrt_variance = math.sqrt(2 * math.pi * variance)
-    exp_factor = math.exp(-(t * t) / (2 * variance))
-    signal = cos_factor * (exp_factor)
+    frequency = self.signal_frequency
+    t_0 = 8 * sigma
 
+    #  initial write from host to device
     cl.enqueue_copy(self.kernel.queue, self.kernel.pv_buf,
                     self.pressure_previous,
                     is_blocking=False)
     cl.enqueue_copy(self.kernel.queue, self.kernel.p_buf, self.pressure,
                     is_blocking=False)
-    cl.enqueue_copy(self.kernel.queue, self.kernel.a_buf, self.analysis)
+    cl.enqueue_copy(self.kernel.queue, self.kernel.a_buf, self.analysis,
+                    is_blocking=False)
+    last_event = cl.enqueue_copy(self.kernel.queue, self.kernel.rms_buf, self.rms,
+                                 is_blocking=False)
+    wait_event = last_event
+    for i in range(count):
+      # calulate new signal value
+      t = self.time - t_0
+      cos_factor = math.cos(2 * math.pi * t * frequency)
+      # sqrt_variance = math.sqrt(2 * math.pi * variance)
+      exp_factor = math.exp(-(t * t) / (2 * variance))
+      signal = cos_factor * (exp_factor)
+      self.signal_set.append(signal)
+      self.kernel.compact.set_arg(10, np.float64(signal))
 
-    self.kernel.compact.set_arg(10, np.float64(signal))
-    # TODO: multiple steps at once, move buffers between step
-    cl.enqueue_nd_range_kernel(self.kernel.queue, self.kernel.compact, [
-        self.pressure.size], None)
-    cl.enqueue_nd_range_kernel(self.kernel.queue, self.kernel.analysis, [
-        self.pressure.size], None)
+      # run compact step
+      kernel_event1 = cl.enqueue_nd_range_kernel(self.kernel.queue, self.kernel.compact, [
+          self.pressure.size], None, wait_for=[wait_event])
+
+      # copy result for next kernel run
+      wait_for_list = []
+      if (i < count - 1):
+        copy_event1 = cl.enqueue_copy(self.kernel.queue,
+                                      self.kernel.pv_buf, self.kernel.p_buf, wait_for=[kernel_event1])
+
+        copy_event2 = cl.enqueue_copy(self.kernel.queue,
+                                      self.kernel.p_buf, self.kernel.pn_buf, wait_for=[kernel_event1])
+        wait_for_list = [copy_event1, copy_event2]
+
+      # set iteration argument
+      self.kernel.analysis.set_arg(8, np.uint32(self.iteration + 1))
+
+      # run analysis
+      kernel_event2 = cl.enqueue_nd_range_kernel(self.kernel.queue, self.kernel.analysis, [
+          self.pressure.size], None, wait_for=wait_for_list)
+
+      wait_event = kernel_event2
+      self.time += DT
+      self.iteration += 1
+
+    # write back to host
     cl.enqueue_copy(self.kernel.queue,
                     self.pressure_previous, self.kernel.p_buf,
-                    is_blocking=False)
+                    is_blocking=False, wait_for=[wait_event])
     cl.enqueue_copy(self.kernel.queue, self.pressure, self.kernel.pn_buf,
-                    is_blocking=False)
+                    is_blocking=False, wait_for=[wait_event])
     cl.enqueue_copy(self.kernel.queue, self.analysis,
-                    self.kernel.a_buf)
-
-    self.time += DT
-    self.iteration += 1
-    self.signal = signal
+                    self.kernel.a_buf, wait_for=[wait_event],
+                    is_blocking=False)
+    final_event = cl.enqueue_copy(self.kernel.queue, self.rms,
+                                  self.kernel.rms_buf, wait_for=[wait_event],
+                                  is_blocking=False)
+    final_event.wait()
