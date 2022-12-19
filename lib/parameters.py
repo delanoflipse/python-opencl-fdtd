@@ -1,30 +1,38 @@
-"""Module Impulse contains all possible impulse generators"""
+"""Module Parameters contains all possible impulse generators"""
 import math
 
-from lib.constants import C_AIR
+from lib.physical_constants import C_AIR
 
-# SIMULATION PARAMETERS
-MIN_FREQUENCY = 20
-MAX_FREQUENCY = 400
-AIR_DAMPENING = 1
-OVERSAMPLING = 16  # should be >= 10
+SQRT_3 = math.sqrt(3)
 
-# --------- CALCULATED ---------
-SAMPLING_FREQUENCY = 2 * MAX_FREQUENCY
-MIN_WAVELENGTH = C_AIR / SAMPLING_FREQUENCY
-DELTA_SPACE = DX = MIN_WAVELENGTH / OVERSAMPLING
-DELTA_TIME = DT = DX / (math.sqrt(3) * C_AIR)  # 3 => 3D
-DT_OVER_DX = DT / DX
-DT_FREQUENCY = 1 / DT
+class SimulationParameters:
+  def __init__(self):
+    self.frequency_interval = 1
+    self.oversampling = 16
+    self.set_min_frequency(20)
+    self.set_max_frequency(200)
+    # TODO: getters/setters/use free parameters
+    self.param_a = 0.0
+    self.param_b = 0.0
+    self.arg_d1 = self.lambda_2 * \
+        (1.0 - 4.0 * self.param_a + 4.0 * self.param_b)
+    self.arg_d2 = self.lambda_2 * (self.param_a - 2.0 * self.param_b)
+    self.arg_d3 = self.lambda_2 * self.param_b
+    self.arg_d4 = 2.0 * (1.0 - 3.0 * self.lambda_2 + 6 * self.lambda_2 *
+                         self.param_a - 4.0 * self.param_b * self.lambda_2)
 
-LAMBDA_COURANT = (C_AIR * DT) / DX
-LAMBDA_2 = LAMBDA_COURANT * LAMBDA_COURANT
+  def set_oversampling(self, oversampling: int) -> None:
+    self.oversampling = oversampling
+    self.set_max_frequency(self.max_frequency)
 
-FREE_PARAM_A = 0.0
-FREE_PARAM_B = 0.0
+  def set_min_frequency(self, min_frequency: float) -> None:
+    self.min_frequency = min_frequency
 
-ARG_D1 = LAMBDA_2 * (1.0 - 4.0 * FREE_PARAM_A + 4.0 * FREE_PARAM_B)
-ARG_D2 = LAMBDA_2 * (FREE_PARAM_A - 2.0 * FREE_PARAM_B)
-ARG_D3 = LAMBDA_2 * FREE_PARAM_B
-ARG_D4 = 2.0 * (1.0 - 3.0 * LAMBDA_2 + 6 * LAMBDA_2 *
-                FREE_PARAM_A - 4.0 * FREE_PARAM_B * LAMBDA_2)
+  def set_max_frequency(self, max_frequency: float) -> None:
+    self.max_frequency = max_frequency
+    self.sampling_frequency = 2 * self.max_frequency
+    self.min_wavelength = C_AIR / self.sampling_frequency
+    self.dx = self.min_wavelength / self.oversampling
+    self.dt = self.dx / (SQRT_3 * C_AIR)
+    self.lambda_courant = (C_AIR * self.dt) / self.dx
+    self.lambda_2 = self.lambda_courant * self.lambda_courant

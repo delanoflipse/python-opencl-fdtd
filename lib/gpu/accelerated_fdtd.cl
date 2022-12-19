@@ -15,9 +15,9 @@ bool in_range(uint size, uint index) { return index > 0 && index < size; }
 __kernel void compact_step(__global double *previous_pressure,
                            __global double *pressure,
                            __global double *pressure_next,
-                           __global char *geometry, __global char *neighbours,
-                           uint size_w, uint size_h, uint size_d, double lambda,
-                           double beta, double signal) {
+                           __global double *betas, __global char *geometry,
+                           __global char *neighbours, uint size_w, uint size_h,
+                           uint size_d, double lambda, double signal) {
   size_t i = get_global_id(0);
   size_t w = (i / (size_h * size_d)) % size_w;
   size_t h = (i / (size_d)) % size_h;
@@ -70,6 +70,7 @@ __kernel void compact_step(__global double *previous_pressure,
   double beta_2_factor = 1.0;
 
   if (neighbour_count < 6) {
+    double beta = betas[i];
     beta_1_factor = 1.0 / (1.0 + lambda * beta);
     beta_2_factor = 1.0 - lambda * beta;
   }

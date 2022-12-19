@@ -3,16 +3,19 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulses import DiracImpulseGenerator, GaussianModulatedImpulseGenerator
-from lib.parameters import DT, DT_FREQUENCY, MAX_FREQUENCY, SAMPLING_FREQUENCY
-from lib.scene import bell_box, shoebox_room
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator
+from lib.parameters import SimulationParameters
+from lib.scenes import bell_box, shoebox_room
+from lib.simulation import Simulation
 
 ITERATIONS_PER_STEP = 10
 
+# get and set style
 file_dir = os.path.dirname(__file__)
 style_location = os.path.join(file_dir, './styles/poster.mplstyle')
 plt.style.use(style_location)
 
+# create subplots
 axes_shape = (3, 3)
 fig = plt.gcf()
 ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
@@ -24,19 +27,22 @@ ax_fft_rec = plt.subplot2grid(axes_shape, (1, 2))
 
 recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec]
 
-# sim = bell_box(False)
-# slice_h = sim.scale(1.32)
-sim = shoebox_room()
-slice_h = sim.scale(1.82)
+params = SimulationParameters()
+params.set_max_frequency(200)
 
-sim.set_frequency(1000)
-sim.set_beta(0.01)
-# sim.generator = GaussianModulatedImpulseGenerator()
-sim.generator = DiracImpulseGenerator()
+# grid = bell_box(params, False)
+# slice_h = grid.scale(1.32)
+grid = shoebox_room(params)
+slice_h = grid.scale(1.82)
+
+sim = Simulation(grid=grid, parameters=params)
+
+sim.generator = GaussianModulatedImpulseGenerator(20, 0.03)
+# sim.generator = DiracImpulseGenerator()
 
 x_data, source_data, max_data = [], [], []
 
-slice = sim.pressure[:, slice_h, :]
+slice = grid.pressure[:, slice_h, :]
 y = np.arange(len(slice))
 x = np.arange(len(slice[0]))
 (x, y) = np.meshgrid(x, y)
@@ -76,24 +82,27 @@ def animate(i) -> None:
   x_data.append(sim.time)
 
   sample_size = 1024
-  subset1 = int(2*SAMPLING_FREQUENCY*DT * sample_size)
-  subset2 = int(2*SAMPLING_FREQUENCY*DT * sample_size*ITERATIONS_PER_STEP)
+  dt_per_iteration = params.dt*ITERATIONS_PER_STEP
+  subset1 = int(2*params.sampling_frequency*params.dt * sample_size)
+  subset2 = int(2*params.sampling_frequency*params.dt *
+                sample_size*ITERATIONS_PER_STEP)
 
   calc_sig = np.fft.rfft(sim.signal_set, n=sample_size)
   calc_sig_abs = np.abs(calc_sig) ** 2
-  calc_sig_axis = np.fft.rfftfreq(n=sample_size, d=DT)
+  calc_sig_axis = np.fft.rfftfreq(n=sample_size, d=params.dt)
   fft_src_plot.set_data(calc_sig_axis[:subset1], calc_sig_abs[:subset1])
 
   source_data.append(
-      sim.pressure[sim.width_parts // 2, slice_h, sim.depth_parts // 2])
+      grid.pressure[grid.width_parts // 2, slice_h, grid.depth_parts // 2])
 
-  calc_rec = np.fft.rfft(source_data, n=sample_size)
-  calc_rec_abs = np.abs(calc_rec) ** 2
-  calc_rec_axis = np.fft.rfftfreq(n=sample_size, d=DT*ITERATIONS_PER_STEP)
-  fft_rec_plot.set_data(calc_rec_axis[:subset2], calc_rec_abs[:subset2])
+  if ITERATIONS_PER_STEP == 1:
+    calc_rec = np.fft.rfft(source_data, n=sample_size)
+    calc_rec_abs = np.abs(calc_rec) ** 2
+    calc_rec_axis = np.fft.rfftfreq(n=sample_size, d=dt_per_iteration)
+    fft_rec_plot.set_data(calc_rec_axis[:subset2], calc_rec_abs[:subset2])
 
-  # slice = sim.analysis[:, slice_h, :]
-  slice = sim.pressure[:, slice_h, :]
+  slice = grid.analysis[:, slice_h, :]
+  # slice = grid.pressure[:, slice_h, :]
 
   maximum = max(abs(slice.min()), abs(slice.max()))
   max_data.append(maximum)
@@ -114,6 +123,5 @@ def animate(i) -> None:
   print(i, sim.time, maximum)
 
 
-sim.setup()
 ani = FuncAnimation(plt.gcf(), animate, interval=1000/60)
 plt.show()
