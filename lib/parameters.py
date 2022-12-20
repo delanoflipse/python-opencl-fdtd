@@ -34,5 +34,6 @@ class SimulationParameters:
     self.min_wavelength = C_AIR / self.sampling_frequency
     self.dx = self.min_wavelength / self.oversampling
     self.dt = self.dx / (SQRT_3 * C_AIR)
+    self.dt_hz = 1 / self.dt
     self.lambda_courant = (C_AIR * self.dt) / self.dx
     self.lambda_2 = self.lambda_courant * self.lambda_courant
