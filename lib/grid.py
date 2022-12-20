@@ -55,9 +55,9 @@ class SimulationGrid:
     (width, height, depth) = shape
     self.parameters = parameters
     self.real_shape = shape
-    self.width_parts = math.ceil(width / parameters.dx)
-    self.height_parts = math.ceil(height / parameters.dx)
-    self.depth_parts = math.ceil(depth / parameters.dx)
+    self.width_parts = int(round(width / parameters.dx))
+    self.height_parts = int(round(height / parameters.dx))
+    self.depth_parts = int(round(depth / parameters.dx))
     self.grid_size = self.width_parts * self.height_parts * self.depth_parts
     self.grid_shape = (self.width_parts, self.height_parts, self.depth_parts)
 

@@ -3,6 +3,8 @@ import os
 import math
 import pyopencl as cl
 import numpy as np
+
+from lib.physical_constants import RHO
 from ..grid import SimulationGrid
 
 RELATIVE_PROGRAM_FILE = "accelerated_fdtd.cl"
@@ -69,10 +71,13 @@ class SimulationKernelProgram:
     self.analysis_kernel = prg.analysis_step
 
     self.analysis_kernel.set_arg(0, self.pressure_buffer)
-    self.analysis_kernel.set_arg(1, self.analysis_buffer)
-    self.analysis_kernel.set_arg(2, self.rms_buffer)
-    self.analysis_kernel.set_arg(3, self.geometry_buffer)
-    self.analysis_kernel.set_arg(4, np.uint32(grid.width_parts))
-    self.analysis_kernel.set_arg(5, np.uint32(grid.height_parts))
-    self.analysis_kernel.set_arg(6, np.uint32(grid.depth_parts))
-    self.analysis_kernel.set_arg(7, np.float64(params.dt))
+    self.analysis_kernel.set_arg(1, self.pressure_next_buffer)
+    self.analysis_kernel.set_arg(2, self.analysis_buffer)
+    self.analysis_kernel.set_arg(3, self.rms_buffer)
+    self.analysis_kernel.set_arg(4, self.geometry_buffer)
+    self.analysis_kernel.set_arg(5, np.uint32(grid.width_parts))
+    self.analysis_kernel.set_arg(6, np.uint32(grid.height_parts))
+    self.analysis_kernel.set_arg(7, np.uint32(grid.depth_parts))
+    self.analysis_kernel.set_arg(8, np.float64(RHO))
+    self.analysis_kernel.set_arg(9, np.float64(params.dt))
+    self.analysis_kernel.set_arg(10, np.uint32(0))

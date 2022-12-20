@@ -77,7 +77,7 @@ class Simulation:
         wait_for_list = [copy_event1, copy_event2]
 
       # set iteration argument
-      self.program.analysis_kernel.set_arg(8, np.uint32(self.iteration + 1))
+      self.program.analysis_kernel.set_arg(10, np.uint32(self.iteration + 1))
 
       # run analysis
       kernel_event2 = cl.enqueue_nd_range_kernel(self.program.queue, self.program.analysis_kernel, [

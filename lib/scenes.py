@@ -1,9 +1,12 @@
-from lib.grid import SOURCE_FLAG, WALL_FLAG, SimulationGrid
+from lib.grid import LISTENER_FLAG, SOURCE_FLAG, WALL_FLAG, SimulationGrid
 from lib.parameters import SimulationParameters
 
 
 def shoebox_room(parameters: SimulationParameters) -> SimulationGrid:
-  shape = (3.6, 2.6, 4.3)
+  _width = 3.6
+  _height = 2.6
+  _depth = 4.3
+  shape = (_width, _height, _depth)
   grid = SimulationGrid(shape, parameters)
 
   # closet 1
@@ -12,7 +15,6 @@ def shoebox_room(parameters: SimulationParameters) -> SimulationGrid:
       d_max=1.9,
       h_max=2,
       w_min=3.0,
-      w_max=3.6,
       geometry_flag=WALL_FLAG,
       beta=0.15,
   )
@@ -30,17 +32,27 @@ def shoebox_room(parameters: SimulationParameters) -> SimulationGrid:
   speaker_height = grid.scale(.97)
 
   # speaker_locations
-  # grid.fill_region(
-  #     d_max=0.4,
-  #     h_min=speaker_height,
-  #     h_max=speaker_height,
-  #     w_min=1.1,
-  #     w_max=2.55,
-  #     geometry_flag=SOURCE_FLAG,
-  # )
+  grid.fill_region(
+      d_max=0.4,
+      h_min=.8,
+      h_max=1.1,
+      w_min=1.1,
+      w_max=2.55,
+      geometry_flag=LISTENER_FLAG,
+  )
 
-  grid.geometry[grid.width_parts // 2, grid.height_parts //
-                2, grid.depth_parts // 2] |= SOURCE_FLAG
+  grid.fill_region(
+      d_min=0.8,
+      d_max=_depth-0.4,
+      h_min=1.6,
+      h_max=1.9,
+      w_min=1.1,
+      w_max=2.55,
+      geometry_flag=SOURCE_FLAG,
+  )
+
+  # grid.geometry[grid.width_parts // 2, grid.height_parts //
+  #               2, grid.depth_parts // 2] |= SOURCE_FLAG
 
   grid.build()
   return grid

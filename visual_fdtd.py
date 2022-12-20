@@ -3,12 +3,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
 from lib.simulation import Simulation
 
-ITERATIONS_PER_STEP = 10
+ITERATIONS_PER_STEP = 1
 
 # get and set style
 file_dir = os.path.dirname(__file__)
@@ -16,14 +16,15 @@ style_location = os.path.join(file_dir, './styles/poster.mplstyle')
 plt.style.use(style_location)
 
 # create subplots
-axes_shape = (3, 3)
+axes_shape = (3, 4)
 fig = plt.gcf()
 ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
-ax_val = plt.subplot2grid(axes_shape, (0, 1))
-ax_rec = plt.subplot2grid(axes_shape, (1, 1))
-ax_max = plt.subplot2grid(axes_shape, (2, 1))
-ax_fft_sig = plt.subplot2grid(axes_shape, (0, 2))
-ax_fft_rec = plt.subplot2grid(axes_shape, (1, 2))
+ax_analysis = plt.subplot2grid(axes_shape, (0, 1), rowspan=3)
+ax_val = plt.subplot2grid(axes_shape, (0, 2))
+ax_rec = plt.subplot2grid(axes_shape, (1, 2))
+ax_max = plt.subplot2grid(axes_shape, (2, 2))
+ax_fft_sig = plt.subplot2grid(axes_shape, (0, 3))
+ax_fft_rec = plt.subplot2grid(axes_shape, (1, 3))
 
 recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec]
 
@@ -37,17 +38,19 @@ slice_h = grid.scale(1.82)
 
 sim = Simulation(grid=grid, parameters=params)
 
-sim.generator = GaussianModulatedImpulseGenerator(20, 0.03)
+# sim.generator = GaussianMonopulseGenerator(50)
+sim.generator = GaussianModulatedImpulseGenerator(50)
 # sim.generator = DiracImpulseGenerator()
 
 x_data, source_data, max_data = [], [], []
 
-slice = grid.pressure[:, slice_h, :]
-y = np.arange(len(slice))
-x = np.arange(len(slice[0]))
-(x, y) = np.meshgrid(x, y)
-slice_image = ax_sim.imshow(slice)
-color_bar = plt.colorbar(slice_image, ax=ax_sim)
+ref_slice_pressure = grid.pressure[:, slice_h, :]
+pressure_image = ax_sim.imshow(ref_slice_pressure)
+color_bar_pressure = plt.colorbar(pressure_image, ax=ax_sim)
+
+ref_slice_analysis = grid.pressure[:, slice_h, :]
+analysis_image = ax_analysis.imshow(ref_slice_analysis)
+color_bar_analysis = plt.colorbar(analysis_image, ax=ax_analysis)
 
 value_plot, = ax_val.plot([], [], "-")
 source_plot, = ax_rec.plot([], [], "-")
@@ -67,16 +70,17 @@ source_plot.axes.set_xlabel("Time (s)")
 source_plot.axes.set_ylabel("Relative Pressure (Pa)")
 ax_sim.set_xlabel("Width Index")
 ax_sim.set_ylabel("Depth Index")
-color_bar.set_label("Relative Pressure(Pa)")
-fig.tight_layout()
+color_bar_pressure.set_label("Relative Pressure(Pa)")
+color_bar_analysis.set_label("Pressure(Pa)")
 
-maximum = 1e-32
-last_maximum = 1e-32
+last_an_maximum = 1e-32
+last_sim_maximum = 1e-32
+
+fig.tight_layout()
 
 
 def animate(i) -> None:
-  global maximum, last_maximum
-
+  global last_sim_maximum, last_an_maximum
   sim.step(ITERATIONS_PER_STEP)
 
   x_data.append(sim.time)
@@ -101,15 +105,25 @@ def animate(i) -> None:
     calc_rec_axis = np.fft.rfftfreq(n=sample_size, d=dt_per_iteration)
     fft_rec_plot.set_data(calc_rec_axis[:subset2], calc_rec_abs[:subset2])
 
-  slice = grid.analysis[:, slice_h, :]
-  # slice = grid.pressure[:, slice_h, :]
+  ref_slice_analysis = grid.analysis[:, slice_h, :]
+  ref_slice_pressure = grid.pressure[:, slice_h, :]
 
-  maximum = max(abs(slice.min()), abs(slice.max()))
-  max_data.append(maximum)
-  slice_image.set_data(slice)
-  if last_maximum != maximum:
-    slice_image.set_clim(-maximum, maximum)
-  last_maximum = maximum
+  an_maximum = max(abs(ref_slice_analysis.min()),
+                   abs(ref_slice_analysis.max()))
+  sim_maximum = max(abs(ref_slice_pressure.min()),
+                    abs(ref_slice_pressure.max()))
+
+  max_data.append(sim_maximum)
+  pressure_image.set_data(ref_slice_pressure)
+  analysis_image.set_data(ref_slice_analysis)
+
+  if last_an_maximum != an_maximum:
+    analysis_image.set_clim(-an_maximum, an_maximum)
+  last_an_maximum = an_maximum
+
+  if last_sim_maximum != sim_maximum:
+    pressure_image.set_clim(-sim_maximum, sim_maximum)
+  last_sim_maximum = sim_maximum
 
   value_plot.set_data(sim.time_set, sim.signal_set)
   source_plot.set_data(x_data, source_data)
@@ -120,7 +134,7 @@ def animate(i) -> None:
     ax.autoscale_view()
 
   fig.canvas.flush_events()
-  print(i, sim.time, maximum)
+  print(i, sim.time, sim_maximum, an_maximum)
 
 
 ani = FuncAnimation(plt.gcf(), animate, interval=1000/60)
