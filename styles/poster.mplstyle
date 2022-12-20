@@ -1,0 +1,12 @@
+image.cmap: seismic
+# figure.facecolor: black
+# axes.facecolor: white
+# axes.edgecolor: black
+# lines.color: white
+# xtick.color: white
+# ytick.color: white
+# text.color: white
+# axes.labelcolor: white
+# savefig.transparent: True
+# savefig.facecolor: white
+# savefig.edgecolor: black

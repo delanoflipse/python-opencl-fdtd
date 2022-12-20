@@ -1,124 +1,107 @@
+from asyncio import wait_for
+import os
 import math
 import numpy as np
 from numba import njit, prange
 
-from lib.grid import create_grid
-from lib.geometry import populate_neighbours
-from lib.constants import KAPPA, RHO, RHO_INVERSE
-from lib.parameters import AIR_DAMPENING, DEPTH_PARTS, DT, DT_OVER_DX, HEIGHT_PARTS, WIDTH_PARTS
+import pyopencl as cl
+from lib.gpu.kernel_program import SimulationKernelProgram
+from lib.grid import SimulationGrid, populate_neighbours
+from lib.impulse_generators import ImpulseGenerator
+from lib.parameters import SimulationParameters
 
-class GridPosition:
-  w = 0
-  h = 0
-  d = 0
-  def __init__(self, w, h, d):
-    self.w = w
-    self.h = h
-    self.d = d
 
-class Source:
-  position = GridPosition(0, 0, 0)
-  frequency = 0
-  pulses = 1
-  invert_phase = False
-  start_at = 0
+class Simulation:
+  """Handles the simulation state and can perform a step"""
 
-class SimulationState:
-  geometry = create_grid("int8")
-  neighbours = create_grid("int8")
-  pressure = create_grid("float64")
-  velocity_x = create_grid("float64")
-  velocity_y = create_grid("float64")
-  velocity_z = create_grid("float64")
-  analysis = create_grid("float64")
-  time = 0
-  iteration = 0
-  sources = []
-  
-sim = SimulationState()
-s1 = Source()
-s1.position = GridPosition(WIDTH_PARTS // 2, HEIGHT_PARTS // 2, DEPTH_PARTS // 2)
-s1.frequency = 1000
-sim.sources.append(s1)
+  def __init__(self, parameters: SimulationParameters, grid: SimulationGrid):
+    self.parameters = parameters
+    self.grid = grid
+    self.program = SimulationKernelProgram(grid)
+    self.generator: ImpulseGenerator = None
+    self.time = 0
+    self.iteration = 0
+    self.signal_set = []
+    self.time_set = []
 
-RHO_DT_DX = -1 * RHO_INVERSE * DT_OVER_DX
-@njit(parallel=True)
-def velocity_step(pressure, velocity_x, velocity_y, velocity_z, geometry, neighbours):
-  for w in prange(pressure.shape[0]):
-    for h in prange(pressure.shape[1]):
-      for d in prange(pressure.shape[2]):
-        current_pressure = pressure[w,h,d]
-        if (w > 0):
-          dpw = current_pressure - pressure[w - 1, h, d]
-          dvz = RHO_DT_DX * dpw
-          current_vx = velocity_x[w, h, d]
-          velocity_x[w, h, d] = current_vx + dvz
-        if (h > 0):
-          dph = current_pressure - pressure[w, h - 1, d]
-          dvz = RHO_DT_DX * dph
-          current_vy = velocity_y[w, h, d]
-          velocity_y[w, h, d] = current_vy + dvz
-        if (d > 0):
-          dpz = current_pressure - pressure[w, h, d - 1]
-          dvz = RHO_DT_DX * dpz
-          current_vz = velocity_z[w, h, d]
-          velocity_z[w, h, d] = current_vz + dvz
+  def reset(self) -> None:
+    self.grid.reset_values()
+    self.time = 0
+    self.iteration = 0
+    self.signal_set = []
+    self.time_set = []
 
-KAPPA_DT_DX = -1 * KAPPA * DT_OVER_DX
-@njit(parallel=True)
-def pressure_step(pressure, velocity_x, velocity_y, velocity_z, geometry, neighbours):
-  for w in prange(pressure.shape[0]):
-    for h in prange(pressure.shape[1]):
-      for d in prange(pressure.shape[2]):
-        if geometry[w,h,d] > 1:
-          continue
-        n = neighbours[w,h,d]
-        current_pressure = pressure[w,h,d]
-        dvx = velocity_x[w + 1, h, d] - velocity_x[w , h, d] if w < WIDTH_PARTS - 1 else 0
-        dvy = velocity_y[w, h + 1, d] - velocity_y[w , h, d] if h < HEIGHT_PARTS - 1 else 0
-        dvz = velocity_z[w, h, d + 1] - velocity_z[w , h, d] if d < DEPTH_PARTS - 1 else 0
-        dv = dvx + dvy + dvz
-        dp = KAPPA_DT_DX * dv
-        # TODO: invert phase on boundary (& etc)
-        # if n < 6:
-        #   cf = 0.5*(6 - n)
-        #   pressure[w,h,d] = (current_pressure + cf * dp) / (1.0 + cf)
-        # else:
-        #   pressure[w,h,d] = (current_pressure + dp) * AIR_DAMPENING
-        pressure[w,h,d] = (current_pressure + dp) * AIR_DAMPENING
-        
-        
-@njit(parallel=True)
-def analysis_step(pressure, velocity_x, velocity_y, velocity_z, geometry, analysis):
-  for w in prange(pressure.shape[0]):
-    for h in prange(pressure.shape[1]):
-      for d in prange(pressure.shape[2]):
-        if geometry[w,h,d] > 1:
-          continue
-        cur = analysis[w,h,d]
-        pres = pressure[w,h,d]
-        analysis[w,h,d] = max(abs(pres), cur)
+  def step(self, count: int = 1) -> None:
+    """Proceed the simulation one or more steps"""
+    # initial write from host to device
+    cl.enqueue_copy(self.program.queue, self.program.pressure_previous_buffer,
+                    self.grid.pressure_previous,
+                    is_blocking=False)
+    cl.enqueue_copy(self.program.queue, self.program.pressure_buffer, self.grid.pressure,
+                    is_blocking=False)
+    cl.enqueue_copy(self.program.queue, self.program.analysis_buffer, self.grid.analysis,
+                    is_blocking=False)
+    last_event = cl.enqueue_copy(
+        self.program.queue, self.program.rms_buffer, self.grid.rms, is_blocking=False)
 
-def simulation_setup():
-  populate_neighbours(sim.geometry, sim.neighbours)
-  for source in sim.sources:
-    sim.geometry[source.position.w, source.position.h, source.position.d] == 2
+    # iteration loop
+    wait_event = last_event
 
-def simulation_step():
-  velocity_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z, sim.geometry, sim.neighbours)
-  pressure_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z, sim.geometry, sim.neighbours)
-  analysis_step(sim.pressure, sim.velocity_x, sim.velocity_y, sim.velocity_z, sim.geometry, sim.analysis)
-  
-  for source in sim.sources:
-    radial_f = 2.0 * math.pi * source.frequency
-    time_active = source.pulses / source.frequency
-    break_off = source.start_at + time_active
-    active = sim.time >= source.start_at and (source.pulses == 0 or sim.time <= break_off)
-    rel_time = sim.time - source.start_at
-    factor = -1 if source.invert_phase else 1 if active else 0
-    radial_t = radial_f * rel_time
-    signal = math.sin(radial_t) * factor
-    sim.pressure[source.position.w, source.position.h, source.position.d] = signal
-  
-  sim.time += DT
-  sim.iteration += 1
+    for i in range(count):
+      # get next signal value
+      signal = 0.0
+
+      if self.generator is not None:
+        signal = self.generator.generate(
+            self.time, self.iteration)
+
+      # set signal value in kernel
+      self.program.step_kernel.set_arg(10, np.float64(signal))
+
+      # add samples
+      self.signal_set.append(signal)
+      self.time_set.append(self.time)
+
+      # run compact step
+      kernel_event1 = cl.enqueue_nd_range_kernel(self.program.queue, self.program.step_kernel, [
+          self.grid.pressure.size], None, wait_for=[wait_event])
+
+      # stream result into right buffer for next kernel run
+      wait_for_list = []
+      if (i < count - 1):
+        copy_event1 = cl.enqueue_copy(self.program.queue,
+                                      self.program.pressure_previous_buffer, self.program.pressure_buffer, wait_for=[kernel_event1])
+
+        copy_event2 = cl.enqueue_copy(self.program.queue,
+                                      self.program.pressure_buffer, self.program.pressure_next_buffer, wait_for=[kernel_event1])
+        wait_for_list = [copy_event1, copy_event2]
+
+      # set iteration argument
+      self.program.analysis_kernel.set_arg(10, np.uint32(self.iteration + 1))
+
+      # run analysis
+      kernel_event2 = cl.enqueue_nd_range_kernel(self.program.queue, self.program.analysis_kernel, [
+          self.grid.pressure.size], None, wait_for=wait_for_list)
+
+      wait_event = kernel_event2
+
+      # finally, update iteration parameters
+      self.time += self.parameters.dt
+      self.iteration += 1
+
+    # write back to host
+    cl.enqueue_copy(self.program.queue,
+                    self.grid.pressure_previous, self.program.pressure_buffer,
+                    is_blocking=False, wait_for=[wait_event])
+    cl.enqueue_copy(self.program.queue, self.grid.pressure, self.program.pressure_next_buffer,
+                    is_blocking=False, wait_for=[wait_event])
+    cl.enqueue_copy(self.program.queue, self.grid.analysis,
+                    self.program.analysis_buffer, wait_for=[wait_event],
+                    is_blocking=False)
+    final_event = cl.enqueue_copy(self.program.queue, self.grid.rms,
+                                  self.program.rms_buffer, wait_for=[
+                                      wait_event],
+                                  is_blocking=False)
+
+    # make sure event is done before processing data further!
+    final_event.wait()
