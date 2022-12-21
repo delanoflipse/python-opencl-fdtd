@@ -72,8 +72,19 @@ class SimulationGrid:
     self.analysis = self.create_grid("float64")
     self.rms = self.create_grid("float64")
     self.beta = self.create_grid("float64")
+
+    self.storage_estimate = self.grid_size * (6*8 + 2)
     self.is_build = False
 
+  def get_storage_str(self)-> str:
+    suffix = "B"
+    num = self.storage_estimate
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
+  
   def reset_values(self) -> None:
     self.pressure.fill(0.0)
     self.pressure_previous.fill(0.0)

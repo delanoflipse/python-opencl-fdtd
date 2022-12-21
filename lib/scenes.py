@@ -80,3 +80,17 @@ def bell_box(parameters: SimulationParameters, has_wall: bool) -> SimulationGrid
 
   grid.build()
   return grid
+
+
+def concert_hall(parameters: SimulationParameters) -> SimulationGrid:
+  _width = 40
+  _height = 8
+  _depth = 65
+  shape = (_width, _height, _depth)
+  grid = SimulationGrid(shape, parameters)
+
+  grid.geometry[grid.scale(_width-1.45), grid.scale(1.35),
+                grid.scale(_depth-0.59)] |= SOURCE_FLAG
+
+  grid.build()
+  return grid

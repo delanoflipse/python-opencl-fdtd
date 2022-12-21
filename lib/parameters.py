@@ -5,6 +5,7 @@ from lib.physical_constants import C_AIR
 
 SQRT_3 = math.sqrt(3)
 
+
 class SimulationParameters:
   def __init__(self):
     self.frequency_interval = 1
@@ -30,7 +31,7 @@ class SimulationParameters:
 
   def set_max_frequency(self, max_frequency: float) -> None:
     self.max_frequency = max_frequency
-    self.sampling_frequency = 2 * self.max_frequency
+    self.sampling_frequency = self.max_frequency
     self.min_wavelength = C_AIR / self.sampling_frequency
     self.dx = self.min_wavelength / self.oversampling
     self.dt = self.dx / (SQRT_3 * C_AIR)
