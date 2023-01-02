@@ -29,7 +29,7 @@ ax_fft_rec = plt.subplot2grid(axes_shape, (1, 3))
 recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec]
 
 params = SimulationParameters()
-params.set_max_frequency(200)
+params.set_max_frequency(500)
 
 # grid = bell_box(params, False)
 # slice_h = grid.scale(1.32)
@@ -39,7 +39,7 @@ slice_h = grid.scale(1.82)
 sim = Simulation(grid=grid, parameters=params)
 
 # sim.generator = GaussianMonopulseGenerator(50)
-sim.generator = GaussianModulatedImpulseGenerator(50)
+sim.generator = GaussianModulatedImpulseGenerator(1000)
 # sim.generator = DiracImpulseGenerator()
 
 x_data, source_data, max_data = [], [], []
