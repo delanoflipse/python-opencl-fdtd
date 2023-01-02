@@ -31,6 +31,7 @@ __kernel void compact_step(__global double *previous_pressure,
 
   bool is_wall = geometry_type & 1;
   bool is_source = geometry_type >> 1 & 1;
+  bool is_inv_source = geometry_type >> 3 & 1;
 
   char neighbour_flag = neighbours[i];
 
@@ -99,6 +100,9 @@ __kernel void compact_step(__global double *previous_pressure,
   if (is_source) {
     next_value += signal;
   }
+  if (is_inv_source) {
+    next_value -= signal;
+  }
 
   pressure_next[i] = next_value;
 }
@@ -141,7 +145,7 @@ __kernel void analysis_step(__global double *pressure_previous,
   double rms_value = sqrt(iteration_factor * rms_sum);
   // analysis[i] = iteration_factor * rms_sum;
   // analysis[i] = rms_value;
-  analysis[i] = 20.0 * log10(rms_value);
+  analysis[i] = 20.0 * log10(rms_value * 50000.0);
   // analysis[i] = 20.0 * log10(current_pressure);
 
   // double current_pressure = pressure[i];

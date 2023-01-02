@@ -45,7 +45,7 @@ class Simulation:
         self.program.queue, self.program.rms_buffer, self.grid.rms, is_blocking=False)
 
     # iteration loop
-    wait_event = last_event
+    wait_event = [last_event]
 
     for i in range(count):
       # get next signal value
@@ -64,7 +64,7 @@ class Simulation:
 
       # run compact step
       kernel_event1 = cl.enqueue_nd_range_kernel(self.program.queue, self.program.step_kernel, [
-          self.grid.pressure.size], None, wait_for=[wait_event])
+          self.grid.pressure.size], None, wait_for=wait_event)
 
       # stream result into right buffer for next kernel run
       wait_for_list = []
@@ -83,7 +83,7 @@ class Simulation:
       kernel_event2 = cl.enqueue_nd_range_kernel(self.program.queue, self.program.analysis_kernel, [
           self.grid.pressure.size], None, wait_for=wait_for_list)
 
-      wait_event = kernel_event2
+      wait_event = [kernel_event2]
 
       # finally, update iteration parameters
       self.time += self.parameters.dt
@@ -92,15 +92,14 @@ class Simulation:
     # write back to host
     cl.enqueue_copy(self.program.queue,
                     self.grid.pressure_previous, self.program.pressure_buffer,
-                    is_blocking=False, wait_for=[wait_event])
+                    is_blocking=False, wait_for=wait_event)
     cl.enqueue_copy(self.program.queue, self.grid.pressure, self.program.pressure_next_buffer,
-                    is_blocking=False, wait_for=[wait_event])
+                    is_blocking=False, wait_for=wait_event)
     cl.enqueue_copy(self.program.queue, self.grid.analysis,
-                    self.program.analysis_buffer, wait_for=[wait_event],
+                    self.program.analysis_buffer, wait_for=wait_event,
                     is_blocking=False)
     final_event = cl.enqueue_copy(self.program.queue, self.grid.rms,
-                                  self.program.rms_buffer, wait_for=[
-                                      wait_event],
+                                  self.program.rms_buffer, wait_for=wait_event,
                                   is_blocking=False)
 
     # make sure event is done before processing data further!

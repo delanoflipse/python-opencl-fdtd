@@ -1,4 +1,4 @@
-from lib.grid import LISTENER_FLAG, SOURCE_FLAG, WALL_FLAG, SimulationGrid
+from lib.grid import INV_SOURCE_FLAG, LISTENER_FLAG, SOURCE_FLAG, WALL_FLAG, SimulationGrid
 from lib.parameters import SimulationParameters
 
 
@@ -41,18 +41,20 @@ def shoebox_room(parameters: SimulationParameters) -> SimulationGrid:
       geometry_flag=LISTENER_FLAG,
   )
 
-  grid.fill_region(
-      d_min=0.8,
-      d_max=_depth-0.4,
-      h_min=1.6,
-      h_max=1.9,
-      w_min=1.1,
-      w_max=2.55,
-      geometry_flag=SOURCE_FLAG,
-  )
+  # grid.fill_region(
+  #     d_min=0.8,
+  #     d_max=_depth-0.4,
+  #     h_min=1.6,
+  #     h_max=1.9,
+  #     w_min=1.1,
+  #     w_max=2.55,
+  #     geometry_flag=SOURCE_FLAG,
+  # )
 
-  # grid.geometry[grid.width_parts // 2, grid.height_parts //
-  #               2, grid.depth_parts // 2] |= SOURCE_FLAG
+  grid.geometry[grid.width_parts // 2, grid.height_parts //
+                2, grid.depth_parts // 3] |= SOURCE_FLAG
+  grid.geometry[grid.width_parts // 2, grid.height_parts //
+                2, grid.depth_parts // 3 - 1] |= INV_SOURCE_FLAG
 
   grid.build()
   return grid
@@ -74,6 +76,20 @@ def bell_box(parameters: SimulationParameters, has_wall: bool) -> SimulationGrid
         geometry_flag=WALL_FLAG,
         beta=0.0,
     )
+
+  grid.geometry[grid.scale(_width-1.45), grid.scale(1.35),
+                grid.scale(_depth-0.59)] |= SOURCE_FLAG
+
+  grid.build()
+  return grid
+
+
+def concert_hall(parameters: SimulationParameters) -> SimulationGrid:
+  _width = 40
+  _height = 8
+  _depth = 65
+  shape = (_width, _height, _depth)
+  grid = SimulationGrid(shape, parameters)
 
   grid.geometry[grid.scale(_width-1.45), grid.scale(1.35),
                 grid.scale(_depth-0.59)] |= SOURCE_FLAG
