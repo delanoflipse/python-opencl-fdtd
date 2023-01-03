@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
 from lib.simulation import Simulation
@@ -108,7 +108,8 @@ def animate(i) -> None:
   it_data.append(f)
   print(f'{f}hz')
   # sim.generator = GaussianMonopulseGenerator(f)
-  sim.generator = GaussianModulatedImpulseGenerator(f)
+  # sim.generator = GaussianModulatedImpulseGenerator(f)
+  sim.generator = WindowModulatedSinoidImpulse(f)
   sim.reset()
   sim.step(runtime_steps)
   run_sweep_analysis(sim.grid.analysis, sweep_sum,
