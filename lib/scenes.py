@@ -53,8 +53,8 @@ def shoebox_room(parameters: SimulationParameters) -> SimulationGrid:
 
   grid.geometry[grid.width_parts // 2, grid.height_parts //
                 2, grid.depth_parts // 3] |= SOURCE_FLAG
-  grid.geometry[grid.width_parts // 2, grid.height_parts //
-                2, grid.depth_parts // 3 - 1] |= INV_SOURCE_FLAG
+  # grid.geometry[grid.width_parts // 2, grid.height_parts //
+  #               2, grid.depth_parts // 3 - 1] |= INV_SOURCE_FLAG
 
   grid.build()
   return grid

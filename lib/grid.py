@@ -74,7 +74,9 @@ class SimulationGrid:
     self.rms = self.create_grid("float64")
     self.beta = self.create_grid("float64")
 
-    self.storage_estimate = self.grid_size * (6*8 + 2)
+    float64_buffers = 6
+    int8_buffers = 2
+    self.storage_estimate = self.grid_size * (float64_buffers*8 + int8_buffers)
     self.is_build = False
 
   def get_storage_str(self)-> str:
@@ -95,11 +97,11 @@ class SimulationGrid:
 
   def fill_region(self, w_min=0.0, w_max=float("inf"), h_min=0.0, h_max=float("inf"), d_min=0.0, d_max=float("inf"), geometry_flag=WALL_FLAG, beta=0.5) -> None:
     d_min_int = clamp(self.scale(d_min), 0, self.depth_parts - 1)
-    d_max_int = clamp(self.scale(d_max), d_min_int + 1, self.depth_parts - 1)
+    d_max_int = clamp(self.scale(d_max), d_min_int + 1, self.depth_parts)
     h_min_int = clamp(self.scale(h_min), 0, self.height_parts - 1)
-    h_max_int = clamp(self.scale(h_max), h_min_int + 1, self.height_parts - 1)
+    h_max_int = clamp(self.scale(h_max), h_min_int + 1, self.height_parts)
     w_min_int = clamp(self.scale(w_min), 0, self.width_parts - 1)
-    w_max_int = clamp(self.scale(w_max), w_min_int + 1, self.width_parts - 1)
+    w_max_int = clamp(self.scale(w_max), w_min_int + 1, self.width_parts)
 
     set_beta = geometry_flag & WALL_FLAG > 0
     for d in range(d_min_int, d_max_int):

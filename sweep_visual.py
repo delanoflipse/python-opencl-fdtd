@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
 from lib.simulation import Simulation
@@ -98,7 +98,6 @@ testing_frequencies = np.arange(sim.parameters.min_frequency,
 # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 test_index = 0
 
-
 def animate(i) -> None:
   global test_index
 
@@ -108,7 +107,8 @@ def animate(i) -> None:
   it_data.append(f)
   print(f'{f}hz')
   # sim.generator = GaussianMonopulseGenerator(f)
-  sim.generator = GaussianModulatedImpulseGenerator(f)
+  # sim.generator = GaussianModulatedImpulseGenerator(f)
+  sim.generator = WindowModulatedSinoidImpulse(f)
   sim.reset()
   sim.step(runtime_steps)
   run_sweep_analysis(sim.grid.analysis, sweep_sum,
@@ -141,6 +141,8 @@ def animate(i) -> None:
   fig.canvas.flush_events()
   print(i, sim.time, slice.max(), slice_3.max())
   test_index += 1
+  
+  # End simulation if no frequencies are left
   if test_index == testing_frequencies.size - 1:
     test_index = -1
 

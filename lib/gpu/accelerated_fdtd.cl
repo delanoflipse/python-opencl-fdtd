@@ -3,7 +3,9 @@
 #define D1_SIZE 6
 #define D2_SIZE 12
 #define D3_SIZE 8
+#define USE_HYBRID_HARD_SOURCE false
 
+// TODO: link stackoverflow post this came from
 __constant unsigned char BitsSetTable256[256] = {
 #define B2(n) n, n + 1, n + 1, n + 2
 #define B4(n) B2(n), B2(n + 1), B2(n + 1), B2(n + 2)
@@ -98,10 +100,23 @@ __kernel void compact_step(__global double *previous_pressure,
       beta_1_factor * (neighbour_factor * current + lambda2 * stencil_sum -
                        beta_2_factor * previous);
   if (is_source) {
-    next_value += signal;
+    if (USE_HYBRID_HARD_SOURCE) {
+      if (signal != 0.0) {
+        next_value = signal;
+      }
+    } else {
+      next_value += signal;
+    }
   }
+
   if (is_inv_source) {
-    next_value -= signal;
+    if (USE_HYBRID_HARD_SOURCE) {
+      if (signal != 0.0) {
+        next_value = -signal;
+      }
+    } else {
+      next_value -= signal;
+    }
   }
 
   pressure_next[i] = next_value;

@@ -1,14 +1,15 @@
+from cmath import log10
 import math
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
 from lib.simulation import Simulation
 
-ITERATIONS_PER_STEP = 1
+ITERATIONS_PER_STEP = 10
 
 # get and set style
 file_dir = os.path.dirname(__file__)
@@ -29,7 +30,7 @@ ax_fft_rec = plt.subplot2grid(axes_shape, (1, 3))
 recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec]
 
 params = SimulationParameters()
-params.set_max_frequency(500)
+params.set_max_frequency(420)
 
 # grid = bell_box(params, False)
 # slice_h = grid.scale(1.32)
@@ -39,10 +40,12 @@ slice_h = grid.scale(1.82)
 sim = Simulation(grid=grid, parameters=params)
 
 # sim.generator = GaussianMonopulseGenerator(50)
-sim.generator = GaussianModulatedImpulseGenerator(1000)
+# sim.generator = GaussianModulatedImpulseGenerator(50)
+hann_window = HannWindow(width=0.5)
+sim.generator = WindowModulatedSinoidImpulse(150, hann_window)
 # sim.generator = DiracImpulseGenerator()
 
-x_data, source_data, max_data = [], [], []
+x_data, source_data, max_data, min_data = [], [], [], []
 
 ref_slice_pressure = grid.pressure[:, slice_h, :]
 pressure_image = ax_sim.imshow(ref_slice_pressure)
@@ -94,7 +97,8 @@ def animate(i) -> None:
   calc_sig = np.fft.rfft(sim.signal_set, n=sample_size)
   calc_sig_abs = np.abs(calc_sig) ** 2
   calc_sig_axis = np.fft.rfftfreq(n=sample_size, d=params.dt)
-  fft_src_plot.set_data(calc_sig_axis[:subset1], calc_sig_abs[:subset1])
+  db_fft_sig = 20 * np.log10(50000 * calc_sig_abs[:subset1])
+  fft_src_plot.set_data(calc_sig_axis[:subset1], db_fft_sig)
 
   source_data.append(
       grid.pressure[grid.width_parts // 2, slice_h, grid.depth_parts // 2])
@@ -103,7 +107,8 @@ def animate(i) -> None:
     calc_rec = np.fft.rfft(source_data, n=sample_size)
     calc_rec_abs = np.abs(calc_rec) ** 2
     calc_rec_axis = np.fft.rfftfreq(n=sample_size, d=dt_per_iteration)
-    fft_rec_plot.set_data(calc_rec_axis[:subset2], calc_rec_abs[:subset2])
+    db_fft_rec = 20 * np.log10(50000 * calc_rec_abs[:subset2])
+    fft_rec_plot.set_data(calc_rec_axis[:subset2], db_fft_rec)
 
   ref_slice_analysis = grid.analysis[:, slice_h, :]
   ref_slice_pressure = grid.pressure[:, slice_h, :]
@@ -114,6 +119,7 @@ def animate(i) -> None:
                     abs(ref_slice_pressure.max()))
 
   max_data.append(sim_maximum)
+  min_data.append(sim_maximum)
   pressure_image.set_data(ref_slice_pressure)
   analysis_image.set_data(ref_slice_analysis)
 
