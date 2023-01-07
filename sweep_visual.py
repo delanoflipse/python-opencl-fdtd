@@ -98,7 +98,6 @@ testing_frequencies = np.arange(sim.parameters.min_frequency,
 # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 test_index = 0
 
-
 def animate(i) -> None:
   global test_index
 
@@ -142,6 +141,8 @@ def animate(i) -> None:
   fig.canvas.flush_events()
   print(i, sim.time, slice.max(), slice_3.max())
   test_index += 1
+  
+  # End simulation if no frequencies are left
   if test_index == testing_frequencies.size - 1:
     test_index = -1
 

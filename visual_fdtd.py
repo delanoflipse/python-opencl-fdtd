@@ -30,7 +30,7 @@ ax_fft_rec = plt.subplot2grid(axes_shape, (1, 3))
 recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec]
 
 params = SimulationParameters()
-params.set_max_frequency(500)
+params.set_max_frequency(420)
 
 # grid = bell_box(params, False)
 # slice_h = grid.scale(1.32)
@@ -41,8 +41,8 @@ sim = Simulation(grid=grid, parameters=params)
 
 # sim.generator = GaussianMonopulseGenerator(50)
 # sim.generator = GaussianModulatedImpulseGenerator(50)
-hann_window = HannWindow(width=0.05)
-sim.generator = WindowModulatedSinoidImpulse(1000, hann_window)
+hann_window = HannWindow(width=0.5)
+sim.generator = WindowModulatedSinoidImpulse(150, hann_window)
 # sim.generator = DiracImpulseGenerator()
 
 x_data, source_data, max_data, min_data = [], [], [], []

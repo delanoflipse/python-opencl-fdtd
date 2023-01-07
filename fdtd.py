@@ -10,8 +10,8 @@ iterations_per_step = 4000
 # count = 40000 // iterations_per_step
 count = 2
 params = SimulationParameters()
-params.set_max_frequency(500)
-params.set_oversampling(9)
+params.set_max_frequency(200)
+# params.set_oversampling(9)
 
 grid = concert_hall(params)
 # grid = shoebox_room(params)
