@@ -34,18 +34,18 @@ recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec, ax_an_db]
 params = SimulationParameters()
 params.set_max_frequency(420)
 
-grid = bell_box(params, True)
-slice_h = grid.scale(1.32)
-# grid = shoebox_room(params)
-# slice_h = grid.scale(1.82)
+# grid = bell_box(params, True)
+# slice_h = grid.scale(1.32)
+grid = shoebox_room(params)
+slice_h = grid.scale(1.82)
 
 sim = Simulation(grid=grid, parameters=params)
 sim.print_statistics()
 
 # sim.generator = GaussianMonopulseGenerator(50)
 # sim.generator = GaussianModulatedImpulseGenerator(50)
-hann_window = HannWindow(width=0.5)
-sim.generator = WindowModulatedSinoidImpulse(20, hann_window)
+hann_window = HannWindow(width=0.1)
+sim.generator = WindowModulatedSinoidImpulse(200, hann_window)
 # sim.generator = DiracImpulseGenerator()
 
 x_data, source_data, max_data = [], [], []
