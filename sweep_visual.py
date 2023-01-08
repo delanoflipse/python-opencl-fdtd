@@ -1,31 +1,21 @@
+"""
+Perform a frequency sweep and analyse the inter-simulation results to
+find the optimal position based on standard deviation  
+"""
+
 import math
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse
+from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
 from lib.simulation import Simulation
 from numba import njit, prange
 
-# get and set style
-file_dir = os.path.dirname(__file__)
-style_location = os.path.join(file_dir, './styles/poster.mplstyle')
-plt.style.use(style_location)
-
-# create subplots
-axes_shape = (4, 3)
-fig = plt.gcf()
-ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
-ax_pres = plt.subplot2grid(axes_shape, (0, 1), rowspan=3)
-ax_analysis = plt.subplot2grid(axes_shape, (0, 2), rowspan=3)
-
-ax_max_an = plt.subplot2grid(axes_shape, (3, 0))
-ax_max_pres = plt.subplot2grid(axes_shape, (3, 1))
-
-recalc_axis = [ax_max_an, ax_max_pres]
-
+# ---- Simulation ----
 params = SimulationParameters()
 params.frequency_interval = 1.0 / 2.0
 # params.set_oversampling(8)
@@ -41,8 +31,27 @@ slice_h = grid.scale(1.82)
 sim = Simulation(grid=grid, parameters=params)
 sim.print_statistics()
 
+# ---- Chart & Axis ----
+# get and set style
+file_dir = os.path.dirname(__file__)
+style_location = os.path.join(file_dir, './styles/poster.mplstyle')
+plt.style.use(style_location)
+
+# create subplot axis
+axes_shape = (4, 3)
+fig = plt.gcf()
+ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
+ax_pres = plt.subplot2grid(axes_shape, (0, 1), rowspan=3)
+ax_analysis = plt.subplot2grid(axes_shape, (0, 2), rowspan=3)
+
+ax_max_an = plt.subplot2grid(axes_shape, (3, 0))
+ax_max_pres = plt.subplot2grid(axes_shape, (3, 1))
+
+# datasets
+recalc_axis = [ax_max_an, ax_max_pres]
 it_data, max_an, min_an, max_pres = [], [], [], []
 
+# charts
 slice_tmp = grid.pressure[:, slice_h, :]
 slice_image = ax_sim.imshow(slice_tmp, cmap="OrRd")
 color_bar = plt.colorbar(slice_image, ax=ax_sim)
@@ -82,16 +91,16 @@ ax_max_an.set_ylabel("Maximum value")
 
 fig.tight_layout()
 
-sim_time = 3.5
-runtime_steps = int(sim_time / sim.parameters.dt)
-print(f'{runtime_steps} steps per sim')
-
+# ---- Analysis ----
 sweep_sum = sim.grid.create_grid("float64")
 sweep_sum_sqr = sim.grid.create_grid("float64")
 sweep_deviation = sim.grid.create_grid("float64")
 sweep_ranking = sim.grid.create_grid("float64")
 
-testing_frequencies = np.arange(20, 200, sim.parameters.frequency_interval)
+SIM_TIME = 3.5
+runtime_steps = int(SIM_TIME / sim.parameters.dt)
+testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
+print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
 
 # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 test_index = 0
