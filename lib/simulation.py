@@ -31,7 +31,12 @@ class Simulation:
     self.signal_set = []
     self.time_set = []
 
-  def step(self, count: int = 1) -> None:
+  def print_statistics(self) -> None:
+    print(f'Kernel platform: {self.program.platforms[0].name}')
+    print(f'w: {self.grid.width_parts} h:{self.grid.height_parts} d:{self.grid.depth_parts}. Total: {self.grid.grid_size}.')
+    print(f'{self.parameters.sampling_frequency}hz target. {self.parameters.dt_hz:0.0f}hz speed. {self.parameters.dx}m size. {self.grid.get_storage_str()} needed')
+
+  def step(self, step_count: int = 1) -> None:
     """Proceed the simulation one or more steps"""
     # initial write from host to device
     cl.enqueue_copy(self.program.queue, self.program.pressure_previous_buffer,
@@ -39,15 +44,13 @@ class Simulation:
                     is_blocking=False)
     cl.enqueue_copy(self.program.queue, self.program.pressure_buffer, self.grid.pressure,
                     is_blocking=False)
-    cl.enqueue_copy(self.program.queue, self.program.analysis_buffer, self.grid.analysis,
-                    is_blocking=False)
-    last_event = cl.enqueue_copy(
-        self.program.queue, self.program.rms_buffer, self.grid.rms, is_blocking=False)
+    last_event = cl.enqueue_copy(self.program.queue, self.program.analysis_buffer, self.grid.analysis,
+                                 is_blocking=False)
 
     # iteration loop
     wait_event = [last_event]
 
-    for i in range(count):
+    for i in range(step_count):
       # get next signal value
       signal = 0.0
 
@@ -68,7 +71,7 @@ class Simulation:
 
       # stream result into right buffer for next kernel run
       wait_for_list = []
-      if (i < count - 1):
+      if (i < step_count - 1):
         copy_event1 = cl.enqueue_copy(self.program.queue,
                                       self.program.pressure_previous_buffer, self.program.pressure_buffer, wait_for=[kernel_event1])
 
@@ -95,11 +98,8 @@ class Simulation:
                     is_blocking=False, wait_for=wait_event)
     cl.enqueue_copy(self.program.queue, self.grid.pressure, self.program.pressure_next_buffer,
                     is_blocking=False, wait_for=wait_event)
-    cl.enqueue_copy(self.program.queue, self.grid.analysis,
-                    self.program.analysis_buffer, wait_for=wait_event,
-                    is_blocking=False)
-    final_event = cl.enqueue_copy(self.program.queue, self.grid.rms,
-                                  self.program.rms_buffer, wait_for=wait_event,
+    final_event = cl.enqueue_copy(self.program.queue, self.grid.analysis,
+                                  self.program.analysis_buffer, wait_for=wait_event,
                                   is_blocking=False)
 
     # make sure event is done before processing data further!

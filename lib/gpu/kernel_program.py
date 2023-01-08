@@ -24,14 +24,11 @@ class SimulationKernelProgram:
     self.platforms = cl.get_platforms()
     self.ctx = cl.create_some_context(interactive=False)
 
-    print(f'Kernel platform: {self.platforms[0].name}')
-
     self.queue = cl.CommandQueue(self.ctx)
     r_flag = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
     rw_flag = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
 
     self.analysis_buffer = cl.Buffer(self.ctx, rw_flag, hostbuf=grid.analysis)
-    self.rms_buffer = cl.Buffer(self.ctx, rw_flag, hostbuf=grid.rms)
     self.pressure_previous_buffer = cl.Buffer(
         self.ctx, r_flag, hostbuf=grid.pressure_previous)
     self.pressure_buffer = cl.Buffer(self.ctx, r_flag, hostbuf=grid.pressure)
@@ -73,11 +70,11 @@ class SimulationKernelProgram:
     self.analysis_kernel.set_arg(0, self.pressure_buffer)
     self.analysis_kernel.set_arg(1, self.pressure_next_buffer)
     self.analysis_kernel.set_arg(2, self.analysis_buffer)
-    self.analysis_kernel.set_arg(3, self.rms_buffer)
-    self.analysis_kernel.set_arg(4, self.geometry_buffer)
-    self.analysis_kernel.set_arg(5, np.uint32(grid.width_parts))
-    self.analysis_kernel.set_arg(6, np.uint32(grid.height_parts))
-    self.analysis_kernel.set_arg(7, np.uint32(grid.depth_parts))
+    self.analysis_kernel.set_arg(3, self.geometry_buffer)
+    self.analysis_kernel.set_arg(4, np.uint32(grid.width_parts))
+    self.analysis_kernel.set_arg(5, np.uint32(grid.height_parts))
+    self.analysis_kernel.set_arg(6, np.uint32(grid.depth_parts))
+    self.analysis_kernel.set_arg(7, np.uint32(grid.analysis_values))
     self.analysis_kernel.set_arg(8, np.float64(RHO))
     self.analysis_kernel.set_arg(9, np.float64(params.dt))
     self.analysis_kernel.set_arg(10, np.uint32(0))
