@@ -149,7 +149,6 @@ class SimulationGrid:
     self.source_count = count_source_locations(self.geometry)
     self.source_index = 0
     set_nth_source_on(self.geometry, self.source_index)
-    set_nth_source_on(self.geometry, self.source_count - 1, unset=False)
     self.is_build = True
 
   def next_source(self) -> None:
@@ -176,7 +175,6 @@ def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> None:
         if geometry[w, h, d] & SOURCE_REGION_FLAG > 0:
           current_index += 1
           if current_index == index:
-            print(f"setting {w},{h},{d}")
             geometry[w, h, d] |= SOURCE_FLAG
   return
 
