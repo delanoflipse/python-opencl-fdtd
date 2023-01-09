@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
 from lib.simulation import Simulation
@@ -44,9 +44,10 @@ sim.print_statistics()
 
 # sim.generator = GaussianMonopulseGenerator(50)
 # sim.generator = GaussianModulatedImpulseGenerator(50)
-hann_window = HannWindow(width=0.1)
-sim.generator = WindowModulatedSinoidImpulse(200, hann_window)
+# hann_window = HannWindow(width=0.1)
+# sim.generator = WindowModulatedSinoidImpulse(200, hann_window)
 # sim.generator = DiracImpulseGenerator()
+sim.generator = SimpleSinoidGenerator(200)
 
 x_data, source_data, max_data = [], [], []
 max_db_data = []

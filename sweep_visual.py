@@ -8,7 +8,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
@@ -18,7 +18,7 @@ from numba import njit, prange
 # ---- Simulation ----
 params = SimulationParameters()
 params.frequency_interval = 1.0 / 2.0
-# params.set_oversampling(8)
+# params.set_oversampling(12)
 params.set_max_frequency(200)
 
 # grid = bell_box(params, True)
@@ -99,7 +99,7 @@ sweep_ranking = sim.grid.create_grid("float64")
 
 SIM_TIME = 3.5
 runtime_steps = int(SIM_TIME / sim.parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
+testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=12)
 print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
 
 # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
@@ -116,7 +116,8 @@ def animate(i) -> None:
   print(f'{f}hz')
   # sim.generator = GaussianMonopulseGenerator(f)
   # sim.generator = GaussianModulatedImpulseGenerator(f)
-  sim.generator = WindowModulatedSinoidImpulse(f)
+  # sim.generator = WindowModulatedSinoidImpulse(f)
+  sim.generator = SimpleSinoidGenerator(f)
   sim.reset()
   sim.step(runtime_steps)
   analysis_key_index = sim.grid.analysis_keys["LEQ"]

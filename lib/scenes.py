@@ -74,19 +74,19 @@ def shoebox_room(parameters: SimulationParameters) -> SimulationGrid:
 
   # speaker_locations
   # on closet 2
-  grid.fill_region(
-      d_min=0.04,
-      d_max=0.43,
-      h_min=speaker_height,
-      h_max=speaker_height + speaker_offset,
-      w_min=1.1,
-      w_max=1.1 + 1.47,
-      geometry_flag=SOURCE_REGION_FLAG,
-  )
+#   grid.fill_region(
+#       d_min=0.04,
+#       d_max=0.43,
+#       h_min=speaker_height,
+#       h_max=speaker_height + speaker_offset,
+#       w_min=1.1,
+#       w_max=1.1 + 1.47,
+#       geometry_flag=SOURCE_REGION_FLAG,
+#   )
 
   # OR single source
-  # grid.geometry[grid.scale(1.83), speaker_height,
-  #               grid.scale(.2)] |= SOURCE_FLAG
+  grid.geometry[grid.scale(1.83), speaker_height,
+                grid.scale(.2)] |= SOURCE_REGION_FLAG
 
   # --- LISTENER LOCATIONS ---
   # sit/stand
