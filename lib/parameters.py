@@ -8,10 +8,10 @@ SQRT_3 = math.sqrt(3)
 
 class SimulationParameters:
   def __init__(self):
-    self.frequency_interval = 1.0
     self.oversampling = 16
     self.set_min_frequency(20.0)
     self.set_max_frequency(200.0)
+    self.signal_frequency = 200.0
     # TODO: getters/setters/use free parameters
     self.param_a = 0.0
     self.param_b = 0.0
@@ -29,9 +29,13 @@ class SimulationParameters:
   def set_min_frequency(self, min_frequency: float) -> None:
     self.min_frequency = min_frequency
 
+  def set_signal_frequency(self, signal_frequency: float) -> None:
+    self.signal_frequency = signal_frequency
+
   def set_max_frequency(self, max_frequency: float) -> None:
     self.max_frequency = max_frequency
     self.sampling_frequency = self.max_frequency
+    # TODO: adjust to be more coherent
     self.min_wavelength = C_AIR / self.sampling_frequency
     self.dx = self.min_wavelength / self.oversampling
     self.dt = self.dx / (SQRT_3 * C_AIR)

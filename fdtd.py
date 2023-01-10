@@ -3,19 +3,23 @@ import time
 
 from lib.impulse_generators import GaussianModulatedImpulseGenerator
 from lib.parameters import SimulationParameters
-from lib.scenes import concert_hall, shoebox_room
+from lib.scenes import concert_hall, ShoeboxRoomScene
 from lib.simulation import Simulation
 
 iterations_per_step = 4000
 # count = 40000 // iterations_per_step
 count = 2
 params = SimulationParameters()
-params.set_max_frequency(200)
 # params.set_oversampling(9)
+params.set_max_frequency(200)
+params.set_signal_frequency(200)
 
-grid = concert_hall(params)
+scene = ShoeboxRoomScene()
+scene.build(params)
+
+# grid = concert_hall(params)
 # grid = shoebox_room(params)
-sim = Simulation(params, grid)
+sim = Simulation(params, scene.grid)
 sim.generator = GaussianModulatedImpulseGenerator(params.max_frequency)
 sim.print_statistics()
 print('Setting up simulation...')

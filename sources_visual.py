@@ -2,7 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.impulse_generators import GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from lib.impulse_generators import GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator, ImpulseGenerator
 from lib.math.octaves import get_octaval_center_frequencies
 
 frequencies = get_octaval_center_frequencies(20, 200)
@@ -37,7 +37,7 @@ for index, generator in enumerate(generators):
   sum_set = []
   dbs_set = []
   for f in frequencies:
-    gen = generator(f)
+    gen: ImpulseGenerator = generator(f)
     value_set = []
     db_value_set = []
     sum = 0.0

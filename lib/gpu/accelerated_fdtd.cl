@@ -3,7 +3,7 @@
 #define D1_SIZE 6
 #define D2_SIZE 12
 #define D3_SIZE 8
-#define USE_HYBRID_HARD_SOURCE false
+#define USE_HYBRID_HARD_SOURCE true
 // #define ALPHA_TIMING 0.05
 #define ALPHA_TIMING 0.01
 
@@ -100,11 +100,9 @@ __kernel void compact_step(__global double *previous_pressure,
   double next_value =
       beta_1_factor * (neighbour_factor * current + lambda2 * stencil_sum -
                        beta_2_factor * previous);
-  if (is_source) {
+  if (is_source && !isnan(signal)) {
     if (USE_HYBRID_HARD_SOURCE) {
-      if (signal != 0.0) {
-        next_value = signal;
-      }
+      next_value = signal;
     } else {
       next_value += signal;
     }

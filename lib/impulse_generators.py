@@ -11,14 +11,15 @@ class ImpulseGenerator:
 
 
 class HannWindow(ImpulseGenerator):
-  def __init__(self, width: float = 0.5) -> None:
+  def __init__(self, width: float = 0.5, end_signal=0.0) -> None:
     self.width = width
+    self.end_signal = end_signal
     self.factor = math.pi / self.width
 
   def generate(self, time: float, iteration: int) -> float:
     t_now = time
     if t_now >= self.width:
-      return 0.0
+      return self.end_signal
     sin_factor = math.sin(t_now * self.factor)
     window_value = sin_factor * sin_factor
     return window_value
@@ -52,6 +53,9 @@ class WindowModulatedSinoidImpulse(ImpulseGenerator):
 
   def generate(self, time: float, iteration: int) -> float:
     envelope_factor = self.window_generator.generate(time, iteration)
+    if math.isnan(envelope_factor):
+      return math.nan
+    
     sinoid_param = time * self.frequency * 2 * math.pi
     sinoid_value = math.cos(
         sinoid_param) if self.use_cosine else math.sin(sinoid_param)
