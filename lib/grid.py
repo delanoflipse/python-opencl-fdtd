@@ -70,30 +70,41 @@ class SimulationGrid:
     self.pressure = self.create_grid("float64")
     self.pressure_previous = self.create_grid("float64")
     self.pressure_next = self.create_grid("float64")
-    self.analysis = self.create_grid("float64")
-    self.rms = self.create_grid("float64")
+
+    self.analysis_keys = {
+        'PRESSURE': 0,
+        'RMS': 1,
+        'LEQ': 2,
+        'EWMA': 3,
+        'EWMA_L': 4,
+        '_TEST': 5,
+    }
+    self.analysis_values = len(self.analysis_keys)
+    # Leq, RMS, ERMS, ...
+    self.analysis_shape = (self.width_parts, self.height_parts,
+                           self.depth_parts, self.analysis_values)
+    self.analysis = np.zeros(shape=self.analysis_shape, dtype="float64")
     self.beta = self.create_grid("float64")
 
-    float64_buffers = 6
+    float64_buffers = 5 + self.analysis_values
     int8_buffers = 2
     self.storage_estimate = self.grid_size * (float64_buffers*8 + int8_buffers)
     self.is_build = False
 
-  def get_storage_str(self)-> str:
+  def get_storage_str(self) -> str:
     suffix = "B"
     num = self.storage_estimate
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-        if abs(num) < 1024.0:
-            return f"{num:3.1f}{unit}{suffix}"
-        num /= 1024.0
+      if abs(num) < 1024.0:
+        return f"{num:3.1f}{unit}{suffix}"
+      num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
-  
+
   def reset_values(self) -> None:
     self.pressure.fill(0.0)
     self.pressure_previous.fill(0.0)
     self.pressure_next.fill(0.0)
     self.analysis.fill(0.0)
-    self.rms.fill(0.0)
 
   def fill_region(self, w_min=0.0, w_max=float("inf"), h_min=0.0, h_max=float("inf"), d_min=0.0, d_max=float("inf"), geometry_flag=WALL_FLAG, beta=0.5) -> None:
     d_min_int = clamp(self.scale(d_min), 0, self.depth_parts - 1)

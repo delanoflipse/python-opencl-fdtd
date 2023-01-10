@@ -4,6 +4,8 @@
 #define D2_SIZE 12
 #define D3_SIZE 8
 #define USE_HYBRID_HARD_SOURCE false
+// #define ALPHA_TIMING 0.05
+#define ALPHA_TIMING 0.01
 
 // TODO: link stackoverflow post this came from
 __constant unsigned char BitsSetTable256[256] = {
@@ -123,10 +125,10 @@ __kernel void compact_step(__global double *previous_pressure,
 }
 
 __kernel void analysis_step(__global double *pressure_previous,
-                            __global double *pressure, __global double *rms,
+                            __global double *pressure,
                             __global double *analysis, __global char *geometry,
-                            uint size_w, uint size_h, uint size_d, double rho,
-                            double dt, uint iteration) {
+                            uint size_w, uint size_h, uint size_d, uint size_a,
+                            double rho, double dt, uint iteration) {
   size_t i = get_global_id(0);
   size_t w = (i / (size_h * size_d)) % size_w;
   size_t h = (i / (size_d)) % size_h;
@@ -138,29 +140,51 @@ __kernel void analysis_step(__global double *pressure_previous,
     return;
   }
 
+  size_t pres_i = i * size_a + 0;
+  size_t rms_i = i * size_a + 1;
+  size_t leq_i = i * size_a + 2;
+  size_t ewma_i = i * size_a + 3;
+  size_t ewma_db_i = i * size_a + 4;
+
   char geometry_type = geometry[i];
 
   bool is_wall = geometry_type & 1;
   bool is_source = geometry_type >> 1 & 1;
   bool is_listener = geometry_type >> 2 & 1;
+  double alpha = dt / ALPHA_TIMING;
 
   if (is_wall) {
     // if (!is_listener) {
+
+    // analysis[ewma_db_i] = -120.0;
+    // analysis[leq_i] = -120.0;
+    analysis[ewma_db_i] = NAN;
+    analysis[leq_i] = NAN;
     return;
   }
 
   double current_pressure = pressure[i];
   double previous_pressure = pressure_previous[i];
   double delta_pressure = current_pressure - previous_pressure;
-  double actual_pressure = rho * delta_pressure;
+  // double actual_pressure = rho * delta_pressure;
+  double actual_pressure = current_pressure;
+  double actual_pressure_squared = actual_pressure * actual_pressure;
+  analysis[pres_i] = actual_pressure;
 
-  double rms_sum = rms[i] + actual_pressure * actual_pressure;
-  rms[i] = rms_sum;
+  double rms_sum = analysis[rms_i] + actual_pressure_squared;
+  analysis[rms_i] = rms_sum;
+
   double iteration_factor = 1.0 / ((double)(iteration));
-  double rms_value = sqrt(iteration_factor * rms_sum);
-  // analysis[i] = iteration_factor * rms_sum;
-  // analysis[i] = rms_value;
-  analysis[i] = 20.0 * log10(rms_value * 50000.0);
+
+  double current_ewma = analysis[ewma_i];
+  double ewma = alpha * actual_pressure_squared + (1 - alpha) * current_ewma;
+  analysis[ewma_i] = ewma;
+  analysis[ewma_db_i] = 10.0 * log10(ewma * 50000.0);
+
+  // note: log sqrt x = 0.5 * log x
+  double rms_value = iteration_factor * rms_sum;
+  analysis[leq_i] = 10.0 * log10(rms_value * 50000.0);
+
   // analysis[i] = 20.0 * log10(current_pressure);
 
   // double current_pressure = pressure[i];
