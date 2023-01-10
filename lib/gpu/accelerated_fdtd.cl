@@ -111,17 +111,16 @@ __kernel void compact_step(__global double *previous_pressure,
   pressure_next[i] = next_value;
 }
 
-__kernel void analysis_step(__global double *pressure_previous,
-                            __global double *pressure,
+__kernel void analysis_step(__global double *pressure,
                             __global double *analysis, __global char *geometry,
                             uint size_w, uint size_h, uint size_d, uint size_a,
-                            double rho, double dt, uint iteration) {
+                            double rho, double dt, double time_elapsed) {
   size_t i = get_global_id(0);
   size_t w = (i / (size_h * size_d)) % size_w;
   size_t h = (i / (size_d)) % size_h;
   size_t d = i % size_d;
 
-  size_t size = size_d * size_h * size_w;
+  size_t size = size_d * size_h * size_w * size_a;
 
   if (i >= size || i < 0) {
     return;
@@ -142,38 +141,34 @@ __kernel void analysis_step(__global double *pressure_previous,
 
   if (is_wall) {
     // if (!is_listener) {
-
-    // analysis[ewma_db_i] = -120.0;
-    // analysis[leq_i] = -120.0;
     analysis[ewma_db_i] = NAN;
     analysis[leq_i] = NAN;
     return;
   }
 
   double current_pressure = pressure[i];
-  double previous_pressure = pressure_previous[i];
-  double delta_pressure = current_pressure - previous_pressure;
+  // double previous_pressure = pressure_previous[i];
+  // double delta_pressure = current_pressure - previous_pressure;
   // double actual_pressure = rho * delta_pressure;
   double actual_pressure = current_pressure;
   analysis[pres_i] = actual_pressure;
 
-  double actual_pressure_squared = actual_pressure * actual_pressure;
-  double rms_addition = actual_pressure_squared * 25e8;
+  double rms_addition = actual_pressure * actual_pressure * 25e8;
 
   double rms_sum = analysis[rms_i] + dt * rms_addition;
   analysis[rms_i] = rms_sum;
 
-  double time_elapsed = dt * (double)(iteration);
-  double iteration_factor = 1.0 / time_elapsed;
+  if (time_elapsed > 0) {
+    double iteration_factor = 1.0 / time_elapsed;
 
-  // note: log sqrt x = 0.5 * log x
-  double rms_value = iteration_factor * rms_sum;
-  analysis[leq_i] = 10.0 * log10(rms_value);
+    // note: log sqrt x = 0.5 * log x
+    double rms_value = iteration_factor * rms_sum;
+    analysis[leq_i] = 10.0 * log10(rms_value);
 
-  double current_ewma = analysis[ewma_i];
-  // TODO
-  double ewma = alpha * rms_addition + (1 - alpha) * current_ewma;
-  analysis[ewma_i] = ewma;
-  analysis[ewma_db_i] = 10.0 * log10(ewma);
+    double current_ewma = analysis[ewma_i];
+    double ewma = alpha * rms_addition + (1 - alpha) * current_ewma;
+    analysis[ewma_i] = ewma;
+    analysis[ewma_db_i] = 10.0 * log10(ewma);
+  }
 
 }
