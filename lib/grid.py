@@ -165,6 +165,12 @@ class SimulationGrid:
     self.source_index += 1
     set_nth_source_on(self.geometry, self.source_index)
 
+  def select_source(self, source_index: int) -> None:
+    if source_index < 0 or source_index >= self.source_count:
+      raise Exception("Source index out of bounds!")
+    self.source_index = source_index
+    set_nth_source_on(self.geometry, self.source_index)
+
   def rebuild(self) -> None:
     """rebuild the geometry"""
     populate_inner_beta(self.geometry, self.beta, self.edge_betas)
@@ -184,6 +190,7 @@ def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> None:
           current_index += 1
           if current_index == index:
             geometry[w, h, d] |= SOURCE_FLAG
+            # print(f'Turned on {w}, {h}, {d}')
   return
 
 

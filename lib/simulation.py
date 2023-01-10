@@ -44,6 +44,8 @@ class Simulation:
   def write_read_buffer(self) -> None:
     cl.enqueue_copy(self.program.queue,
                     self.program.beta_buffer, self.grid.beta)
+    cl.enqueue_copy(self.program.queue,
+                    self.program.geometry_buffer, self.grid.geometry)
 
   def enqueue_copy(self, dest, src, is_blocking=False, **kwargs) -> cl.Event:
     # kwargs["is_blocking"] = is_blocking

@@ -10,6 +10,8 @@ concrete_material = SimulatedMaterial("concrete")
 laminate_material = SimulatedMaterial("laminate")
 plaster_material = SimulatedMaterial("plaster")
 glass_material = SimulatedMaterial("glass")
+
+
 class Scene:
   def __init__(self, parameters: SimulationParameters) -> None:
     self.parameters = parameters
@@ -18,22 +20,23 @@ class Scene:
     self.depth = 0.0
     self.shape = (self.width, self.height, self.depth)
     self.grid: SimulationGrid = None
-    
+
   def build(self) -> SimulationGrid:
     self.grid = SimulationGrid(self.shape, self.parameters)
     self.mark_regions()
     self.grid.build()
     return self.grid
-  
+
   def rebuild(self) -> None:
     if self.grid is None:
       raise Exception("Grid is set. Please call build before calling rebuild!")
     self.mark_regions()
     self.grid.rebuild()
     return None
-  
+
   def mark_regions(self) -> None:
     return None
+
 
 class ShoeboxRoomScene(Scene):
   def __init__(self, parameters: SimulationParameters) -> None:
@@ -42,8 +45,7 @@ class ShoeboxRoomScene(Scene):
     self.height = 2.6
     self.depth = 4.2
     self.shape = (self.width, self.height, self.depth)
-    
-  
+
   def mark_regions(self) -> None:
     if self.grid is None:
       return
@@ -101,19 +103,19 @@ class ShoeboxRoomScene(Scene):
 
     # speaker_locations
     # on closet 2
-  #   grid.fill_region(
-  #       d_min=0.04,
-  #       d_max=0.43,
-  #       h_min=speaker_height,
-  #       h_max=speaker_height + speaker_offset,
-  #       w_min=1.1,
-  #       w_max=1.1 + 1.47,
-  #       geometry_flag=SOURCE_REGION_FLAG,
-  #   )
+    self.grid.fill_region(
+        d_min=0.04,
+        d_max=0.43,
+        h_min=speaker_height,
+        h_max=speaker_height + speaker_offset,
+        w_min=1.1,
+        w_max=1.1 + 1.47,
+        geometry_flag=SOURCE_REGION_FLAG,
+    )
 
     # OR single source
-    self.grid.geometry[self.grid.scale(1.83), speaker_height,
-                  self.grid.scale(.2)] |= SOURCE_REGION_FLAG
+    # self.grid.geometry[self.grid.scale(1.83), speaker_height,
+    #               self.grid.scale(.2)] |= SOURCE_REGION_FLAG
 
     # --- LISTENER LOCATIONS ---
     # sit/stand
@@ -140,18 +142,17 @@ class ShoeboxRoomScene(Scene):
 class BellBoxScene(Scene):
   def __init__(self, parameters: SimulationParameters, has_wall: bool = True) -> None:
     super().__init__(parameters)
-    self.width =  2.19
+    self.width = 2.19
     self.height = 2.42
     self.depth = 3.03
     self.has_wall = has_wall
     self.shape = (self.width, self.height, self.depth)
-    
-  
+
   def mark_regions(self) -> None:
     if self.grid is None:
       return
     run_frequency = self.grid.parameters.signal_frequency
-    
+
     # wall
     if self.has_wall:
       self.grid.fill_region(
@@ -161,28 +162,29 @@ class BellBoxScene(Scene):
           geometry_flag=WALL_FLAG,
           beta=wood_material.get_beta(run_frequency),
       )
-    
+
     w_source = self.grid.scale(self.width-1.45)
     h_source = self.grid.scale(1.35)
     d_source = self.grid.scale(self.depth-0.59)
     self.grid.geometry[w_source, h_source, d_source] |= SOURCE_REGION_FLAG
     self.grid.fill_region(
-      d_min=0.2,
-      w_min = 0.2,
-      w_max=self.width - 0.2,
-      h_min = 0.2,
-      h_max=self.height - 0.2,
-      geometry_flag=LISTENER_FLAG,
+        d_min=0.2,
+        w_min=0.2,
+        w_max=self.width - 0.2,
+        h_min=0.2,
+        h_max=self.height - 0.2,
+        geometry_flag=LISTENER_FLAG,
     )
+
 
 class ConcertHallScene(Scene):
   def __init__(self, parameters: SimulationParameters) -> None:
     super().__init__(parameters)
-    self.width =  40.0
+    self.width = 40.0
     self.height = 8.0
     self.depth = 65.0
     self.shape = (self.width, self.height, self.depth)
-    
+
   def mark_regions(self) -> None:
     if self.grid is None:
       return
