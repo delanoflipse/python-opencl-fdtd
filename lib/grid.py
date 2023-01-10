@@ -16,8 +16,8 @@ BIT_5 = 1 << 5
 
 WALL_FLAG = BIT_0
 SOURCE_FLAG = BIT_1
-LISTENER_FLAG = BIT_2
-INV_SOURCE_FLAG = BIT_3
+SOURCE_REGION_FLAG = BIT_2
+LISTENER_FLAG = BIT_3
 
 BASE_BETA = 0.01
 
@@ -48,6 +48,14 @@ class GridEdgeBeta:
     self.width_min = BASE_BETA
     self.width_max = BASE_BETA
 
+  def set_all(self, value: float) -> None:
+    self.height_min = value
+    self.height_max = value
+    self.depth_min = value
+    self.depth_max = value
+    self.width_min = value
+    self.width_max = value
+
 
 class SimulationGrid:
   """All data related to the grid of the simulation"""
@@ -62,7 +70,7 @@ class SimulationGrid:
     self.grid_size = self.width_parts * self.height_parts * self.depth_parts
     self.grid_shape = (self.width_parts, self.height_parts, self.depth_parts)
 
-    self.edges = GridEdgeBeta()
+    self.edge_betas = GridEdgeBeta()
 
     self.geometry = self.create_grid("int8")
     self.neighbours = self.create_grid("int8")
@@ -89,6 +97,8 @@ class SimulationGrid:
     float64_buffers = 5 + self.analysis_values
     int8_buffers = 2
     self.storage_estimate = self.grid_size * (float64_buffers*8 + int8_buffers)
+    self.source_count = -1
+    self.source_index = -1
     self.is_build = False
 
   def get_storage_str(self) -> str:
@@ -135,8 +145,50 @@ class SimulationGrid:
   def build(self) -> None:
     """Once flags are set, build the geometry"""
     populate_neighbours(self.geometry, self.neighbours)
-    populate_inner(self.geometry, self.beta, self.edges)
+    populate_inner_beta(self.geometry, self.beta, self.edge_betas)
+    self.source_count = count_source_locations(self.geometry)
+    self.source_index = 0
+    set_nth_source_on(self.geometry, self.source_index)
     self.is_build = True
+
+  def next_source(self) -> None:
+    # TODO: check overflow
+    self.source_index += 1
+    set_nth_source_on(self.geometry, self.source_index)
+
+  def rebuild(self) -> None:
+    """rebuild the geometry"""
+    # TODO
+    # populate_inner_beta(self.geometry, self.beta, self.edge_betas)
+
+
+@njit
+def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> None:
+  """Set the nth source region cell to be the current source"""
+  current_index = -1
+  # TODO: return location tuple?
+  for w in prange(geometry.shape[0]):
+    for h in prange(geometry.shape[1]):
+      for d in prange(geometry.shape[2]):
+        if unset:
+          geometry[w, h, d] &= ~SOURCE_FLAG
+        if geometry[w, h, d] & SOURCE_REGION_FLAG > 0:
+          current_index += 1
+          if current_index == index:
+            geometry[w, h, d] |= SOURCE_FLAG
+  return
+
+
+@njit(parallel=True)
+def count_source_locations(geometry: np.ndarray) -> int:
+  """Count the number of cells that have the SOURCE_REGION_FLAG set"""
+  count = 0
+  for w in prange(geometry.shape[0]):
+    for h in prange(geometry.shape[1]):
+      for d in prange(geometry.shape[2]):
+        if geometry[w, h, d] & SOURCE_REGION_FLAG > 0:
+          count += 1
+  return count
 
 
 @njit(parallel=True)
@@ -165,7 +217,7 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
 
 
 @njit(parallel=True)
-def populate_inner(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta) -> None:
+def populate_inner_beta(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta) -> None:
   """Set neighbour flags for geometry"""
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):

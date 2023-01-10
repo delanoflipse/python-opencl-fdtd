@@ -35,7 +35,6 @@ __kernel void compact_step(__global double *previous_pressure,
 
   bool is_wall = geometry_type & 1;
   bool is_source = geometry_type >> 1 & 1;
-  bool is_inv_source = geometry_type >> 3 & 1;
 
   char neighbour_flag = neighbours[i];
 
@@ -111,16 +110,6 @@ __kernel void compact_step(__global double *previous_pressure,
     }
   }
 
-  if (is_inv_source) {
-    if (USE_HYBRID_HARD_SOURCE) {
-      if (signal != 0.0) {
-        next_value = -signal;
-      }
-    } else {
-      next_value -= signal;
-    }
-  }
-
   pressure_next[i] = next_value;
 }
 
@@ -150,7 +139,7 @@ __kernel void analysis_step(__global double *pressure_previous,
 
   bool is_wall = geometry_type & 1;
   bool is_source = geometry_type >> 1 & 1;
-  bool is_listener = geometry_type >> 2 & 1;
+  bool is_listener = geometry_type >> 3 & 1;
   double alpha = dt / ALPHA_TIMING;
 
   if (is_wall) {
@@ -168,28 +157,25 @@ __kernel void analysis_step(__global double *pressure_previous,
   double delta_pressure = current_pressure - previous_pressure;
   // double actual_pressure = rho * delta_pressure;
   double actual_pressure = current_pressure;
-  double actual_pressure_squared = actual_pressure * actual_pressure;
   analysis[pres_i] = actual_pressure;
 
-  double rms_sum = analysis[rms_i] + actual_pressure_squared;
+  double actual_pressure_squared = actual_pressure * actual_pressure;
+  double rms_addition = actual_pressure_squared * 25e8;
+
+  double rms_sum = analysis[rms_i] + dt * rms_addition;
   analysis[rms_i] = rms_sum;
 
-  double iteration_factor = 1.0 / ((double)(iteration));
-
-  double current_ewma = analysis[ewma_i];
-  double ewma = alpha * actual_pressure_squared + (1 - alpha) * current_ewma;
-  analysis[ewma_i] = ewma;
-  analysis[ewma_db_i] = 10.0 * log10(ewma * 50000.0);
+  double time_elapsed = dt * (double)(iteration);
+  double iteration_factor = 1.0 / time_elapsed;
 
   // note: log sqrt x = 0.5 * log x
   double rms_value = iteration_factor * rms_sum;
-  analysis[leq_i] = 10.0 * log10(rms_value * 50000.0);
+  analysis[leq_i] = 10.0 * log10(rms_value);
 
-  // analysis[i] = 20.0 * log10(current_pressure);
+  double current_ewma = analysis[ewma_i];
+  // TODO
+  double ewma = alpha * rms_addition + (1 - alpha) * current_ewma;
+  analysis[ewma_i] = ewma;
+  analysis[ewma_db_i] = 10.0 * log10(ewma);
 
-  // double current_pressure = pressure[i];
-  // analysis[i] += current_pressure * dt;
-
-  // double current_max = analysis[i];
-  // analysis[i] = max(fabs(current_pressure), current_max);
 }

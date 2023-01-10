@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse
+from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
 from lib.simulation import Simulation
@@ -34,19 +34,21 @@ recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec, ax_an_db]
 params = SimulationParameters()
 params.set_max_frequency(420)
 
-grid = bell_box(params, True)
-slice_h = grid.scale(1.32)
-# grid = shoebox_room(params)
+# grid = bell_box(params, True)
+# slice_h = grid.scale(1.32)
+grid = shoebox_room(params)
 # slice_h = grid.scale(1.82)
+slice_h = grid.scale(.97)
 
 sim = Simulation(grid=grid, parameters=params)
 sim.print_statistics()
 
 # sim.generator = GaussianMonopulseGenerator(50)
 # sim.generator = GaussianModulatedImpulseGenerator(50)
-hann_window = HannWindow(width=0.5)
-sim.generator = WindowModulatedSinoidImpulse(20, hann_window)
+# hann_window = HannWindow(width=0.1)
+# sim.generator = WindowModulatedSinoidImpulse(200, hann_window)
 # sim.generator = DiracImpulseGenerator()
+sim.generator = SimpleSinoidGenerator(40)
 
 x_data, source_data, max_data = [], [], []
 max_db_data = []
@@ -124,8 +126,8 @@ def animate(i) -> None:
   ref_slice_analysis_ewma = l_ewma_slice[:, slice_h, :]
   ref_slice_pressure = grid.pressure[:, slice_h, :]
 
-  leq_max = np.nanmax(ref_slice_analysis_leq)
-  leq_min = np.nanmin(ref_slice_analysis_leq)
+  leq_max = np.nanmax(leq_slice)
+  leq_min = np.nanmin(leq_slice)
   an_maximum = max(abs(leq_max), abs(leq_min))
   sim_maximum = max(abs(ref_slice_pressure.min()),
                     abs(ref_slice_pressure.max()))

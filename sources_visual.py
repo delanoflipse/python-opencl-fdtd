@@ -2,16 +2,21 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.impulse_generators import GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse
+from lib.impulse_generators import GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from lib.math.octaves import get_octaval_center_frequencies
 
-frequencies = np.arange(20.0, 200.0, 1.0)
-time = np.arange(0.0, 2.0, 1/10000)
+frequencies = get_octaval_center_frequencies(20, 200)
+dt = 1/10000
+time = np.arange(0.0, 2.0, dt)
 generators = [GaussianMonopulseGenerator,
-              GaussianModulatedImpulseGenerator, WindowModulatedSinoidImpulse]
+              GaussianModulatedImpulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator]
 
 axes_shape = (7, len(generators))  # (Rows, Colums)
 fig = plt.gcf()
 
+P_0 = 20e-6
+P_0_2 = P_0 * P_0
+P_0_2INV = 1 / P_0_2
 
 def array_map(x, f):
   return np.array(list(map(f, x)))
@@ -44,10 +49,10 @@ for index, generator in enumerate(generators):
       i += 1
       v = gen.generate(t, 0)
       value_set.append(v)
-      sum += v
-      rms_sum += v * v
-      rms = math.sqrt((1/i)*rms_sum)
-      spl = 20 * math.log10(rms * 50000.0) if rms != 0.0 else 0.0
+      sum += v * dt
+      rms_sum += dt * (v * v) * P_0_2INV
+      rms = (1/ t) * rms_sum if t > 0 else 0.0
+      spl = 10 * math.log10(rms) if rms != 0.0 else 0.0
       db_value_set.append(spl)
       rms_set.append(rms)
     zero_set.append(gen.generate(0.0, 0))

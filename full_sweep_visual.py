@@ -8,18 +8,17 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from lib.impulse_generators import WindowModulatedSinoidImpulse
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
 from lib.scenes import bell_box, shoebox_room
-from lib.grid import LISTENER_FLAG
 from lib.simulation import Simulation
 from numba import njit, prange
 
 # ---- Simulation ----
 params = SimulationParameters()
 params.frequency_interval = 1.0 / 2.0
-# params.set_oversampling(12)
+# params.set_oversampling(8)
 params.set_max_frequency(200)
 
 # grid = bell_box(params, True)
@@ -27,7 +26,6 @@ params.set_max_frequency(200)
 
 grid = shoebox_room(params)
 slice_h = grid.scale(1.82)
-# slice_h = grid.scale(.97)
 # slice_h = grid.scale(.97) + 1
 
 sim = Simulation(grid=grid, parameters=params)
@@ -48,11 +46,10 @@ ax_analysis = plt.subplot2grid(axes_shape, (0, 2), rowspan=3)
 
 ax_max_an = plt.subplot2grid(axes_shape, (3, 0))
 ax_max_pres = plt.subplot2grid(axes_shape, (3, 1))
-ax_mean_spl = plt.subplot2grid(axes_shape, (3, 2))
 
 # datasets
-recalc_axis = [ax_max_an, ax_max_pres, ax_mean_spl]
-it_data, max_an, min_an, max_pres, mean_spl = [], [], [], [], []
+recalc_axis = [ax_max_an, ax_max_pres]
+it_data, max_an, min_an, max_pres = [], [], [], []
 
 # charts
 slice_tmp = grid.pressure[:, slice_h, :]
@@ -67,7 +64,6 @@ color_bar_3 = plt.colorbar(slice_image_3, ax=ax_pres)
 
 max_pres_plot, = ax_max_pres.plot([], [], "-")
 max_an_plot, min_an_plot = ax_max_an.plot([], [], [], "-")
-mean_spl_plot, = ax_mean_spl.plot([], [], "-")
 
 ax_sim.set_title("Simulation")
 ax_sim.set_xlabel("Width Index")
@@ -93,10 +89,6 @@ ax_max_an.set_title("Maximum Analytical value")
 ax_max_an.set_xlabel("Frequency (hz)")
 ax_max_an.set_ylabel("Maximum value")
 
-ax_mean_spl.set_title("Average SPL in listener region")
-ax_mean_spl.set_xlabel("Frequency (hz)")
-ax_mean_spl.set_ylabel("Average SPL (dB)")
-
 fig.tight_layout()
 
 # ---- Analysis ----
@@ -105,7 +97,7 @@ sweep_sum_sqr = sim.grid.create_grid("float64")
 sweep_deviation = sim.grid.create_grid("float64")
 sweep_ranking = sim.grid.create_grid("float64")
 
-SIM_TIME = 2.5
+SIM_TIME = 3.5
 runtime_steps = int(SIM_TIME / sim.parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
 print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
@@ -124,14 +116,12 @@ def animate(i) -> None:
   print(f'{f}hz')
   # sim.generator = GaussianMonopulseGenerator(f)
   # sim.generator = GaussianModulatedImpulseGenerator(f)
-  # sim.generator = WindowModulatedSinoidImpulse(f)
-  sim.generator = SimpleSinoidGenerator(f)
+  sim.generator = WindowModulatedSinoidImpulse(f)
   sim.reset()
   sim.step(runtime_steps)
   analysis_key_index = sim.grid.analysis_keys["LEQ"]
   run_sweep_analysis(sim.grid.analysis, sweep_sum, sweep_sum_sqr,
                      sweep_deviation, sweep_ranking, analysis_key_index, i + 1)
-  avg_spl = get_avg_spl(sim.grid.analysis, sim.grid.geometry, analysis_key_index)
 
   leq_analysis = grid.analysis[:, :, :, analysis_key_index]
   max_l_eq = np.nanmax(leq_analysis)
@@ -153,10 +143,8 @@ def animate(i) -> None:
   max_an.append(max_l_eq)
   min_an.append(min_l_eq)
   max_pres.append(slice_3_max)
-  mean_spl.append(avg_spl)
 
   max_an_plot.set_data(it_data, max_an)
-  mean_spl_plot.set_data(it_data, mean_spl)
   min_an_plot.set_data(it_data, min_an)
   max_pres_plot.set_data(it_data, max_pres)
 
@@ -205,23 +193,6 @@ def run_sweep_analysis(step_analysis: np.ndarray, summation: np.ndarray, sum_sqr
         diff = (standart_dev_leq - _min) / _range
         r = 1 - diff
         ranking[w, h, d] = r
-
-@ njit(parallel=True)
-def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, analysis_value: int) -> float:
-  """Set neighbour flags for geometry"""
-  _sum = 0.0
-  _count = 0
-  for w in prange(analytical_values.shape[0]):
-    for h in prange(analytical_values.shape[1]):
-      for d in prange(analytical_values.shape[2]):
-        cell_flags = flags[w, h, d]
-        if cell_flags & LISTENER_FLAG == 0:
-          continue
-        
-        v_l_eq = analytical_values[w, h, d, analysis_value]
-        _sum += v_l_eq
-        _count += 1
-  return _sum / _count
 
 
 ani = FuncAnimation(plt.gcf(), animate, interval=1000/60)

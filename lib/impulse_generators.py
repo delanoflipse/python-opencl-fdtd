@@ -57,6 +57,19 @@ class WindowModulatedSinoidImpulse(ImpulseGenerator):
         sinoid_param) if self.use_cosine else math.sin(sinoid_param)
     return envelope_factor * sinoid_value
 
+class SimpleSinoidGenerator(ImpulseGenerator):
+  """Generates a windowed sinoid impulse"""
+
+  def __init__(self, frequency: float, use_cosine: bool = True) -> None:
+    self.frequency = frequency
+    self.use_cosine = use_cosine
+
+  def generate(self, time: float, iteration: int) -> float:
+    sinoid_param = time * self.frequency * 2 * math.pi
+    sinoid_value = math.cos(
+        sinoid_param) if self.use_cosine else math.sin(sinoid_param)
+    return sinoid_value
+
 
 class GaussianModulatedImpulseGenerator(ImpulseGenerator):
   """Generates a Gaussian modulated cosine impulse"""
