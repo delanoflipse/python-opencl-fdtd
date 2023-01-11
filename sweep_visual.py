@@ -8,36 +8,38 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from lib.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import bell_box, shoebox_room
-from lib.grid import LISTENER_FLAG
+from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
 from lib.simulation import Simulation
-from numba import njit, prange
 
 # ---- Simulation ----
-params = SimulationParameters()
-params.frequency_interval = 1.0 / 2.0
+parameters = SimulationParameters()
 # params.set_oversampling(12)
-params.set_max_frequency(200)
+parameters.set_max_frequency(200)
 
-# grid = bell_box(params, True)
-# slice_h = grid.scale(1.32)
+SIM_TIME = 0.5
+runtime_steps = int(SIM_TIME / parameters.dt)
+testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=8)
 
-grid = shoebox_room(params)
-slice_h = grid.scale(1.82)
+# scene = ShoeboxRoomScene(parameters)
+scene = BellBoxScene(parameters, has_wall=True)
+# scene = ConcertHallScene(parameters)
+grid = scene.build()
+
+SLICE_HEIGHT = grid.scale(1.82)
 # slice_h = grid.scale(.97)
 # slice_h = grid.scale(.97) + 1
-
-sim = Simulation(grid=grid, parameters=params)
+sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
+print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
 
 # ---- Chart & Axis ----
 # get and set style
 file_dir = os.path.dirname(__file__)
-style_location = os.path.join(file_dir, './styles/poster.mplstyle')
-plt.style.use(style_location)
+plt.style.use(os.path.join(file_dir, './styles/poster.mplstyle'))
 
 # create subplot axis
 axes_shape = (4, 3)
@@ -55,7 +57,7 @@ recalc_axis = [ax_max_an, ax_max_pres, ax_mean_spl]
 it_data, max_an, min_an, max_pres, mean_spl = [], [], [], [], []
 
 # charts
-slice_tmp = grid.pressure[:, slice_h, :]
+slice_tmp = grid.pressure[:, SLICE_HEIGHT, :]
 slice_image = ax_sim.imshow(slice_tmp, cmap="OrRd")
 color_bar = plt.colorbar(slice_image, ax=ax_sim)
 
@@ -105,11 +107,6 @@ sweep_sum_sqr = sim.grid.create_grid("float64")
 sweep_deviation = sim.grid.create_grid("float64")
 sweep_ranking = sim.grid.create_grid("float64")
 
-SIM_TIME = 2.5
-runtime_steps = int(SIM_TIME / sim.parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
-print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
-
 # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 test_index = 0
 
@@ -120,31 +117,35 @@ def animate(i) -> None:
   if test_index == -1:
     return
   f = testing_frequencies[test_index]
+  parameters.set_signal_frequency(f)
   it_data.append(f)
-  print(f'{f}hz')
   # sim.generator = GaussianMonopulseGenerator(f)
   # sim.generator = GaussianModulatedImpulseGenerator(f)
   # sim.generator = WindowModulatedSinoidImpulse(f)
-  sim.generator = SimpleSinoidGenerator(f)
+  sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
+
+  scene.rebuild()
+  sim.write_read_buffer()
   sim.reset()
   sim.step(runtime_steps)
   analysis_key_index = sim.grid.analysis_keys["LEQ"]
   run_sweep_analysis(sim.grid.analysis, sweep_sum, sweep_sum_sqr,
                      sweep_deviation, sweep_ranking, analysis_key_index, i + 1)
-  avg_spl = get_avg_spl(sim.grid.analysis, sim.grid.geometry, analysis_key_index)
+  avg_spl = get_avg_spl(
+      sim.grid.analysis, sim.grid.geometry, analysis_key_index)
 
   leq_analysis = grid.analysis[:, :, :, analysis_key_index]
   max_l_eq = np.nanmax(leq_analysis)
   min_l_eq = np.nanmin(leq_analysis)
-  slice_leq = leq_analysis[:, slice_h, :]
+  slice_leq = leq_analysis[:, SLICE_HEIGHT, :]
   slice_image.set_data(slice_leq)
   slice_image.set_clim(min_l_eq, max_l_eq)
 
-  slice_2 = sweep_ranking[:, slice_h, :]
+  slice_2 = sweep_ranking[:, SLICE_HEIGHT, :]
   slice_image_2.set_data(slice_2)
   slice_image_2.set_clim(slice_2.min(), slice_2.max())
 
-  slice_3 = sim.grid.pressure[:, slice_h, :]
+  slice_3 = sim.grid.pressure[:, SLICE_HEIGHT, :]
   slice_3_max = max(abs(sim.grid.pressure.min()),
                     abs(sim.grid.pressure.max()))
   slice_image_3.set_data(slice_3)
@@ -165,63 +166,12 @@ def animate(i) -> None:
     ax.autoscale_view()
 
   fig.canvas.flush_events()
-  print(i, sim.time, max_l_eq, slice_3.max())
+  print(i, f'{f}hz', sim.time, avg_spl)
   test_index += 1
 
   # End simulation if no frequencies are left
-  if test_index == testing_frequencies.size - 1:
+  if test_index == testing_frequencies.size:
     test_index = -1
-
-
-@ njit(parallel=True)
-def run_sweep_analysis(step_analysis: np.ndarray, summation: np.ndarray, sum_sqr: np.ndarray, dev: np.ndarray, ranking: np.ndarray, analysis_value: int, n: int) -> None:
-  """Set neighbour flags for geometry"""
-  _max = -1e99
-  _min = 1e99
-  for w in prange(step_analysis.shape[0]):
-    for h in prange(step_analysis.shape[1]):
-      for d in prange(step_analysis.shape[2]):
-        v_l_eq = step_analysis[w, h, d, analysis_value]
-        if math.isnan(v_l_eq):
-          dev[w, h, d] = math.nan
-          continue
-        _m = summation[w, h, d]
-        _new_m = _m + (v_l_eq - _m)/n
-        summation[w, h, d] = _new_m
-        sum_sqr[w, h, d] += (v_l_eq - _new_m) * (v_l_eq - _m)
-        _dev = sum_sqr[w, h, d] / n
-        _max = max(_dev, _max)
-        _min = min(_dev, _min)
-        dev[w, h, d] = _dev
-
-  _range = _max - _min
-  for w in prange(step_analysis.shape[0]):
-    for h in prange(step_analysis.shape[1]):
-      for d in prange(step_analysis.shape[2]):
-        standart_dev_leq = dev[w, h, d]
-        if math.isnan(standart_dev_leq):
-          ranking[w, h, d] = 0
-          continue
-        diff = (standart_dev_leq - _min) / _range
-        r = 1 - diff
-        ranking[w, h, d] = r
-
-@ njit(parallel=True)
-def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, analysis_value: int) -> float:
-  """Set neighbour flags for geometry"""
-  _sum = 0.0
-  _count = 0
-  for w in prange(analytical_values.shape[0]):
-    for h in prange(analytical_values.shape[1]):
-      for d in prange(analytical_values.shape[2]):
-        cell_flags = flags[w, h, d]
-        if cell_flags & LISTENER_FLAG == 0:
-          continue
-        
-        v_l_eq = analytical_values[w, h, d, analysis_value]
-        _sum += v_l_eq
-        _count += 1
-  return _sum / _count
 
 
 ani = FuncAnimation(plt.gcf(), animate, interval=1000/60)

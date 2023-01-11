@@ -98,6 +98,7 @@ class SimulationGrid:
     int8_buffers = 2
     self.storage_estimate = self.grid_size * (float64_buffers*8 + int8_buffers)
     self.source_count = -1
+    self.listener_count = -1
     self.source_index = -1
     self.is_build = False
 
@@ -109,6 +110,14 @@ class SimulationGrid:
         return f"{num:3.1f}{unit}{suffix}"
       num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
+
+  def get_cell_size_str(self) -> str:
+    num = self.storage_estimate
+    for unit in ["", "e3/K", "e6/M", "e9/G", "e12/T", "e15/P", "e18/E", "e21/Z"]:
+      if abs(num) < 1000.0:
+        return f"{num:3.1f}{unit}"
+      num /= 1000.0
+    return f"{num:.1f}Yi"
 
   def reset_values(self) -> None:
     self.pressure.fill(0.0)
@@ -146,27 +155,32 @@ class SimulationGrid:
     """Once flags are set, build the geometry"""
     populate_neighbours(self.geometry, self.neighbours)
     populate_inner_beta(self.geometry, self.beta, self.edge_betas)
-    self.source_count = count_source_locations(self.geometry)
+    self.source_count, self.listener_count = count_locations(self.geometry)
     self.source_index = 0
     set_nth_source_on(self.geometry, self.source_index)
     self.is_build = True
 
-  def next_source(self) -> None:
+  def next_source(self) -> tuple[int, int, int]:
     # TODO: check overflow
     self.source_index += 1
-    set_nth_source_on(self.geometry, self.source_index)
+    return set_nth_source_on(self.geometry, self.source_index)
+
+  def select_source(self, source_index: int) -> tuple[int, int, int]:
+    if source_index < 0 or source_index >= self.source_count:
+      raise Exception("Source index out of bounds!")
+    self.source_index = source_index
+    return set_nth_source_on(self.geometry, self.source_index)
 
   def rebuild(self) -> None:
     """rebuild the geometry"""
-    # TODO
-    # populate_inner_beta(self.geometry, self.beta, self.edge_betas)
+    populate_inner_beta(self.geometry, self.beta, self.edge_betas)
 
 
 @njit
-def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> None:
+def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> tuple[int, int, int]:
   """Set the nth source region cell to be the current source"""
   current_index = -1
-  # TODO: return location tuple?
+  location = None
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
@@ -176,19 +190,24 @@ def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> None:
           current_index += 1
           if current_index == index:
             geometry[w, h, d] |= SOURCE_FLAG
-  return
+            location = (w, h, d)
+            # print(f'Turned on {w}, {h}, {d}')
+  return location
 
 
 @njit(parallel=True)
-def count_source_locations(geometry: np.ndarray) -> int:
+def count_locations(geometry: np.ndarray) -> tuple[int, int]:
   """Count the number of cells that have the SOURCE_REGION_FLAG set"""
-  count = 0
+  count_src = 0
+  count_lis = 0
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
         if geometry[w, h, d] & SOURCE_REGION_FLAG > 0:
-          count += 1
-  return count
+          count_src += 1
+        if geometry[w, h, d] & LISTENER_FLAG > 0:
+          count_lis += 1
+  return count_src, count_lis
 
 
 @njit(parallel=True)

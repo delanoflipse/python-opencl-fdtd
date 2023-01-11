@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.parameters import SimulationParameters
-from lib.scenes import bell_box, shoebox_room
+from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
 from lib.simulation import Simulation
 
-ITERATIONS_PER_STEP = 10
+ITERATIONS_PER_STEP = 1
 
 # get and set style
 file_dir = os.path.dirname(__file__)
@@ -33,31 +33,35 @@ recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec, ax_an_db]
 
 params = SimulationParameters()
 params.set_max_frequency(420)
+params.set_signal_frequency(40)
 
-# grid = bell_box(params, True)
-# slice_h = grid.scale(1.32)
-grid = shoebox_room(params)
-# slice_h = grid.scale(1.82)
-slice_h = grid.scale(.97)
+scene = ShoeboxRoomScene(params)
+# scene = BellBoxScene(parameters, has_wall=True)
+# scene = ConcertHallScene(parameters)
+
+grid = scene.build()
+# SLICE_HEIGHT = grid.scale(1.32)
+# SLICE_HEIGHT = grid.scale(1.82)
+SLICE_HEIGHT = grid.scale(.97)
 
 sim = Simulation(grid=grid, parameters=params)
 sim.print_statistics()
 
-# sim.generator = GaussianMonopulseGenerator(50)
-# sim.generator = GaussianModulatedImpulseGenerator(50)
-# hann_window = HannWindow(width=0.1)
-# sim.generator = WindowModulatedSinoidImpulse(200, hann_window)
+# sim.generator = GaussianMonopulseGenerator(params.signal_frequency)
+# sim.generator = GaussianModulatedImpulseGenerator(params.signal_frequency)
+hann_window = HannWindow(width=0.1, end_signal=math.nan)
+sim.generator = WindowModulatedSinoidImpulse(params.signal_frequency, hann_window)
 # sim.generator = DiracImpulseGenerator()
-sim.generator = SimpleSinoidGenerator(40)
+# sim.generator = SimpleSinoidGenerator(params.signal_frequency)
 
 x_data, source_data, max_data = [], [], []
 max_db_data = []
 
-ref_slice_pressure = grid.pressure[:, slice_h, :]
+ref_slice_pressure = grid.pressure[:, SLICE_HEIGHT, :]
 pressure_image = ax_sim.imshow(ref_slice_pressure)
 color_bar_pressure = plt.colorbar(pressure_image, ax=ax_sim)
 
-ref_slice_analysis = grid.pressure[:, slice_h, :]
+ref_slice_analysis = grid.pressure[:, SLICE_HEIGHT, :]
 analysis_image = ax_analysis.imshow(ref_slice_analysis)
 color_bar_analysis = plt.colorbar(analysis_image, ax=ax_analysis)
 analysis_image_2 = ax_analysis_2.imshow(ref_slice_analysis)
@@ -74,8 +78,12 @@ db_over_time_min, db_over_time_max, = ax_an_db.plot([], [], [], "-")
 ax_sim.set_title("Simulation")
 ax_val.set_title("Input signal")
 ax_rec.set_title("Signal at Receiver")
+ax_max.set_title("Chart max SPL")
 ax_fft_sig.set_title("FFT input signal")
-ax_an_db.set_title("Max EWMA DB")
+ax_fft_rec.set_title("FFT received signal")
+ax_analysis.set_title("SPL (dB)")
+ax_analysis_2.set_title("EMWA SPL (dB)")
+ax_an_db.set_title("Max EWMA (dB)")
 
 value_plot.axes.set_xlabel("Time (s)")
 value_plot.axes.set_ylabel("Relative Pressure (Pa)")
@@ -111,7 +119,7 @@ def animate(i) -> None:
   fft_src_plot.set_data(calc_sig_axis[:subset1], db_fft_sig)
 
   source_data.append(
-      grid.pressure[grid.width_parts // 2, slice_h, grid.depth_parts // 2])
+      grid.pressure[grid.width_parts // 2, SLICE_HEIGHT, grid.depth_parts // 2])
 
   if ITERATIONS_PER_STEP == 1:
     calc_rec = np.fft.rfft(source_data, n=sample_size)
@@ -122,9 +130,9 @@ def animate(i) -> None:
 
   leq_slice = grid.analysis[:, :, :, sim.grid.analysis_keys["LEQ"]]
   l_ewma_slice = grid.analysis[:, :, :, sim.grid.analysis_keys["EWMA_L"]]
-  ref_slice_analysis_leq = leq_slice[:, slice_h, :]
-  ref_slice_analysis_ewma = l_ewma_slice[:, slice_h, :]
-  ref_slice_pressure = grid.pressure[:, slice_h, :]
+  ref_slice_analysis_leq = leq_slice[:, SLICE_HEIGHT, :]
+  ref_slice_analysis_ewma = l_ewma_slice[:, SLICE_HEIGHT, :]
+  ref_slice_pressure = grid.pressure[:, SLICE_HEIGHT, :]
 
   leq_max = np.nanmax(leq_slice)
   leq_min = np.nanmin(leq_slice)
