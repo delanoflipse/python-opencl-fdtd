@@ -98,16 +98,13 @@ class ShoeboxRoomScene(Scene):
     )
 
     # --- SOURCE LOCATIONS ---
-    speaker_height = self.grid.scale(.97)
-    speaker_offset = self.grid.scale(.1)
-
     # speaker_locations
     # on closet 2
     self.grid.fill_region(
         d_min=0.04,
         d_max=0.43,
-        h_min=speaker_height,
-        h_max=speaker_height + speaker_offset,
+        h_min=.97,
+        h_max=.97 + 0.1,
         w_min=1.1,
         w_max=1.1 + 1.47,
         geometry_flag=SOURCE_REGION_FLAG,
@@ -167,6 +164,7 @@ class BellBoxScene(Scene):
     h_source = self.grid.scale(1.35)
     d_source = self.grid.scale(self.depth-0.59)
     self.grid.geometry[w_source, h_source, d_source] |= SOURCE_REGION_FLAG
+    
     self.grid.fill_region(
         d_min=0.2,
         w_min=0.2,

@@ -18,7 +18,6 @@ def log_interp1d(xx, yy, kind='linear'):
 class SimulatedMaterial:
   # https://calculla.com/sound_absorption_coefficients
   # 1 - alpha = beta
-  # TODO: frequency dependant materials
   def __init__(self, material_name: str):
     self.interp_function = None
     self.get_interp_from_material(material_name)

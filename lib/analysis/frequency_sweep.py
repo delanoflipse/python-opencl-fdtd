@@ -5,8 +5,6 @@ from lib.grid import LISTENER_FLAG
 from lib.impulse_generators import GaussianModulatedImpulseGenerator
 from lib.simulation import Simulation
 from numba import njit, prange
-# TODO: unused
-
 
 def frequency_sweep(sim: Simulation) -> np.ndarray:
   sweep_analysis = sim.grid.create_grid("float64")

@@ -35,7 +35,7 @@ class Simulation:
     print(f'Kernel platform: {self.program.platforms[0].name}')
     print(
         f'[Params] w: {self.grid.width_parts}\th:{self.grid.height_parts}\td:{self.grid.depth_parts}')
-    print(f'[Params] {self.parameters.sampling_frequency}hz target.\t{self.parameters.dt_hz:0.0f}hz speed.\t{self.parameters.dx}m size. ')
+    print(f'[Params] {self.parameters.sampling_frequency}hz target.\t{self.parameters.dt_hz:0.0f}hz speed.\t{self.parameters.dx * 1000:.2f}mm size. ')
     print(
         f'[Storage] Cells: {self.grid.get_cell_size_str()}\tStorage: {self.grid.get_storage_str()} needed')
     print(

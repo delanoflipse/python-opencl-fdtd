@@ -160,16 +160,16 @@ class SimulationGrid:
     set_nth_source_on(self.geometry, self.source_index)
     self.is_build = True
 
-  def next_source(self) -> None:
+  def next_source(self) -> tuple[int, int, int]:
     # TODO: check overflow
     self.source_index += 1
-    set_nth_source_on(self.geometry, self.source_index)
+    return set_nth_source_on(self.geometry, self.source_index)
 
-  def select_source(self, source_index: int) -> None:
+  def select_source(self, source_index: int) -> tuple[int, int, int]:
     if source_index < 0 or source_index >= self.source_count:
       raise Exception("Source index out of bounds!")
     self.source_index = source_index
-    set_nth_source_on(self.geometry, self.source_index)
+    return set_nth_source_on(self.geometry, self.source_index)
 
   def rebuild(self) -> None:
     """rebuild the geometry"""
@@ -177,10 +177,10 @@ class SimulationGrid:
 
 
 @njit
-def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> None:
+def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> tuple[int, int, int]:
   """Set the nth source region cell to be the current source"""
   current_index = -1
-  # TODO: return location tuple?
+  location = None
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
@@ -190,8 +190,9 @@ def set_nth_source_on(geometry: np.ndarray, index: int, unset=True) -> None:
           current_index += 1
           if current_index == index:
             geometry[w, h, d] |= SOURCE_FLAG
+            location = (w, h, d)
             # print(f'Turned on {w}, {h}, {d}')
-  return
+  return location
 
 
 @njit(parallel=True)
