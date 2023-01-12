@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
 from lib.impulse_generators import SimpleSinoidGenerator
+from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
 from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
@@ -19,9 +20,9 @@ from lib.simulation import Simulation
 
 # --- SELECT PARAMETERS ---
 SIMULATED_TIME = 0.5
-MAX_FREQUENCY = 300
+MAX_FREQUENCY = 200
 OVERSAMPLING = 16
-OCTAVE_BANDS = 12
+OCTAVE_BANDS = 6
 USE_REALTIME_VISUALS = False
 USE_VISUALS = True
 USE_FILE_LOGS = True
@@ -175,8 +176,10 @@ def run_source_analysis_iteration() -> bool:
     run_sweep_analysis(grid.analysis, sweep_sum, sweep_sum_sqr,
                        sweep_deviation, sweep_ranking, analysis_key_index, index + 1)
     avg_spl = get_avg_spl(grid.analysis, grid.geometry, analysis_key_index)
-    spl_values.append(avg_spl)
-    log.info(f'[{source_index}] {frequency:.2f}hz: {avg_spl:.2f} SPL (dB)')
+    # a_weighting = get_a_weighting(frequency)
+    a_spl = avg_spl
+    spl_values.append(a_spl)
+    log.info(f'[{source_index}] {frequency:.2f}hz: {a_spl:.2f} SPL (dB)')
   deviation = get_avg_dev(sweep_deviation, grid.geometry)
   avg_spl = np.average(spl_values)
   deviations.append(deviation)
