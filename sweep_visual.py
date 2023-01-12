@@ -5,11 +5,14 @@ find the optimal position based on standard deviation
 
 import math
 import os
+from re import A
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
 from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
@@ -22,16 +25,16 @@ parameters.set_max_frequency(200)
 
 SIM_TIME = 0.5
 runtime_steps = int(SIM_TIME / parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=8)
+testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=6)
 
-# scene = ShoeboxRoomScene(parameters)
-scene = BellBoxScene(parameters, has_wall=True)
+scene = ShoeboxRoomScene(parameters)
+# scene = BellBoxScene(parameters, has_wall=True)
 # scene = ConcertHallScene(parameters)
 grid = scene.build()
 
-SLICE_HEIGHT = grid.scale(1.82)
-# slice_h = grid.scale(.97)
-# slice_h = grid.scale(.97) + 1
+# SLICE_HEIGHT = grid.scale(1.82)
+SLICE_HEIGHT = grid.scale(.97)
+# SLICE_HEIGHT = grid.scale(.97) + 1
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
 print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
@@ -44,6 +47,8 @@ plt.style.use(os.path.join(file_dir, './styles/poster.mplstyle'))
 # create subplot axis
 axes_shape = (4, 3)
 fig = plt.gcf()
+fig.set_dpi(150)
+fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
 ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
 ax_pres = plt.subplot2grid(axes_shape, (0, 1), rowspan=3)
 ax_analysis = plt.subplot2grid(axes_shape, (0, 2), rowspan=3)
@@ -54,7 +59,7 @@ ax_mean_spl = plt.subplot2grid(axes_shape, (3, 2))
 
 # datasets
 recalc_axis = [ax_max_an, ax_max_pres, ax_mean_spl]
-it_data, max_an, min_an, max_pres, mean_spl = [], [], [], [], []
+it_data, max_an, min_an, max_pres, mean_spl, a_spl = [], [], [], [], [], []
 
 # charts
 slice_tmp = grid.pressure[:, SLICE_HEIGHT, :]
@@ -69,7 +74,7 @@ color_bar_3 = plt.colorbar(slice_image_3, ax=ax_pres)
 
 max_pres_plot, = ax_max_pres.plot([], [], "-")
 max_an_plot, min_an_plot = ax_max_an.plot([], [], [], "-")
-mean_spl_plot, = ax_mean_spl.plot([], [], "-")
+mean_spl_plot, a_weighted_spl = ax_mean_spl.plot([], [], [], "-")
 
 ax_sim.set_title("Simulation")
 ax_sim.set_xlabel("Width Index")
@@ -99,6 +104,12 @@ ax_mean_spl.set_title("Average SPL in listener region")
 ax_mean_spl.set_xlabel("Frequency (hz)")
 ax_mean_spl.set_ylabel("Average SPL (dB)")
 
+for ax in recalc_axis:
+  ax.set_xscale('log', base=2)
+  ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
+  ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+
+
 fig.tight_layout()
 
 # ---- Analysis ----
@@ -119,6 +130,7 @@ def animate(i) -> None:
   f = testing_frequencies[test_index]
   parameters.set_signal_frequency(f)
   it_data.append(f)
+  # a_weighting = get_a_weighting(f)
   # sim.generator = GaussianMonopulseGenerator(f)
   # sim.generator = GaussianModulatedImpulseGenerator(f)
   # sim.generator = WindowModulatedSinoidImpulse(f)
@@ -155,17 +167,20 @@ def animate(i) -> None:
   min_an.append(min_l_eq)
   max_pres.append(slice_3_max)
   mean_spl.append(avg_spl)
+  a_spl.append(avg_spl)
 
   max_an_plot.set_data(it_data, max_an)
   mean_spl_plot.set_data(it_data, mean_spl)
   min_an_plot.set_data(it_data, min_an)
   max_pres_plot.set_data(it_data, max_pres)
+  a_weighted_spl.set_data(it_data, a_spl)
 
   for ax in recalc_axis:
     ax.relim()
     ax.autoscale_view()
 
   fig.canvas.flush_events()
+  fig.tight_layout()
   print(i, f'{f}hz', sim.time, avg_spl)
   test_index += 1
 
