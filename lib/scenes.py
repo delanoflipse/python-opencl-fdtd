@@ -85,18 +85,6 @@ class ShoeboxRoomScene(Scene):
         beta=wood_material.get_beta(run_frequency),
     )
 
-    # bed
-    # 39.5x147x77
-    self.grid.fill_region(
-        d_min=0.04,
-        d_max=0.43,
-        h_max=0.77,
-        w_min=1.1,
-        w_max=1.1 + 1.47,
-        geometry_flag=WALL_FLAG,
-        beta=wood_material.get_beta(run_frequency),
-    )
-
     # --- SOURCE LOCATIONS ---
     # speaker_locations
     # on closet 2
@@ -107,6 +95,27 @@ class ShoeboxRoomScene(Scene):
         h_max=.97 + 0.1,
         w_min=1.1,
         w_max=1.1 + 1.47,
+        geometry_flag=SOURCE_REGION_FLAG,
+    )
+
+    # on the floor, left
+    self.grid.fill_region(
+        d_min=0.12,
+        d_max=1.35,
+        h_min=.2,
+        h_max=.2 + 0.1,
+        w_min=0.04,
+        w_max=0.3,
+        geometry_flag=SOURCE_REGION_FLAG,
+    )
+
+    # on the floor, right
+    self.grid.fill_region(
+        d_min=2.1,
+        d_max=2.6,
+        h_min=.2,
+        h_max=.2 + 0.1,
+        w_min=self.width - 0.5,
         geometry_flag=SOURCE_REGION_FLAG,
     )
 

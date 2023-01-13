@@ -75,10 +75,12 @@ def get_avg_dev(standard_deviation: np.ndarray, flags: np.ndarray) -> float:
 
 
 @njit(parallel=True)
-def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int) -> float:
+def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int) -> tuple[float, float, float]:
   """Set neighbour flags for geometry"""
   _sum = 0.0
   _count = 0
+  _min = float('inf')
+  _max = -float('inf')
   for w in prange(analytical_values.shape[0]):
     for h in prange(analytical_values.shape[1]):
       for d in prange(analytical_values.shape[2]):
@@ -90,8 +92,10 @@ def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int
         if math.isnan(v_l_eq):
           continue
         _sum += v_l_eq
+        _min = min(_min, v_l_eq)
+        _max = max(_max, v_l_eq)
         _count += 1
   if _count == 0:
     return 0.0
 
-  return _sum / _count
+  return _sum / _count, _min, _max

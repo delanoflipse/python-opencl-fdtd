@@ -11,6 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
+from lib.analysis.source_pairs import get_n_pairs_with_min_distance
 from lib.impulse_generators import SimpleSinoidGenerator
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
@@ -19,36 +20,19 @@ from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
 from lib.simulation import Simulation
 
 # --- SELECT PARAMETERS ---
-SIMULATED_TIME = 0.5
+SIMULATED_TIME = 0.35
 MAX_FREQUENCY = 200
 OVERSAMPLING = 16
-OCTAVE_BANDS = 6
-USE_REALTIME_VISUALS = False
+OCTAVE_BANDS = 3
+SPEAKERS = 2
+SPEAKERS_MIN_SPACE = 2.0
+USE_REALTIME_VISUALS = True
 USE_VISUALS = True
 USE_FILE_LOGS = True
 WRITE_CSV = True
 LOG_LEVEL = logging.DEBUG
 # -----
 
-# ---- Logging ----
-file_dir = os.path.dirname(__file__)
-log = logging.getLogger("FDTD")
-log.setLevel(LOG_LEVEL)
-# logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] - %(message)s")
-logFormatter = logging.Formatter(
-    "%(asctime)s [%(levelname)-5.5s] - %(message)s")
-
-output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} [{MAX_FREQUENCY}-{OVERSAMPLING}-{OCTAVE_BANDS}]'
-
-if USE_FILE_LOGS:
-  fileHandler = logging.FileHandler(
-      "{0}/{1}.log".format(os.path.join(file_dir, "output"), output_uid))
-  fileHandler.setFormatter(logFormatter)
-  log.addHandler(fileHandler)
-
-consoleHandler = logging.StreamHandler(sys.stdout)
-consoleHandler.setFormatter(logFormatter)
-log.addHandler(consoleHandler)
 
 # ---- Simulation ----
 parameters = SimulationParameters()
@@ -71,7 +55,31 @@ SLICE_HEIGHT = grid.scale(1.82)
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
 analysis_key_index = sim.grid.analysis_keys["LEQ"]
+position_sets = get_n_pairs_with_min_distance(
+    grid.source_set, SPEAKERS, parameters.dx, SPEAKERS_MIN_SPACE)
+
+# ---- Logging ----
+file_dir = os.path.dirname(__file__)
+log = logging.getLogger("FDTD")
+log.setLevel(LOG_LEVEL)
+# logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] - %(message)s")
+logFormatter = logging.Formatter(
+    "%(asctime)s [%(levelname)-5.5s] - %(message)s")
+
+output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {scene.__class__.__name__} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}x-{OCTAVE_BANDS}o-{SPEAKERS}s]'
+
+if USE_FILE_LOGS:
+  fileHandler = logging.FileHandler(
+      "{0}/{1}.log".format(os.path.join(file_dir, "output"), output_uid))
+  fileHandler.setFormatter(logFormatter)
+  log.addHandler(fileHandler)
+
+consoleHandler = logging.StreamHandler(sys.stdout)
+consoleHandler.setFormatter(logFormatter)
+log.addHandler(consoleHandler)
+
 log.info('---- Statring simulation ----')
+log.info('%d pairs', len(position_sets))
 log.info('%d steps per sim', runtime_steps)
 log.info('%d frequencies', testing_frequencies.size)
 log.info('Scene: %s', scene.__class__.__name__)
@@ -87,22 +95,32 @@ if WRITE_CSV:
   header_row = [
       "Time",
       "Index",
-      "W idx",
-      "w (m)",
-      "H idx",
-      "h (m)",
-      "D idx",
-      "d (m)",
+  ]
+
+  for i in range(SPEAKERS):
+    header_row = header_row + [
+        f"W{i} idx",
+        f"w{i} (m)",
+        f"H{i} idx",
+        f"h{i} (m)",
+        f"D{i} idx",
+        f"d{i} (m)",
+    ]
+
+  header_row += [
       "Deviation",
       "SPL (avg dB)",
       "Bands (SPL dB):",
       *map(lambda x: f'{x:.2f}', testing_frequencies.tolist())
   ]
+
   writer.writerow(header_row)
   csv_file.flush()
 
 # state
 spl_values_per_source = []
+max_spl_values_per_source = []
+min_spl_values_per_source = []
 sources_covered = []
 deviations = []
 
@@ -114,20 +132,23 @@ plt.style.use(os.path.join(file_dir, './styles/poster.mplstyle'))
 fig = plt.gcf()
 fig.set_dpi(150)
 fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
-axes_shape = (1, 2)
+axes_shape = (2, 2)
 axis_deviation = plt.subplot2grid(axes_shape, (0, 0))
 axis_spl = plt.subplot2grid(axes_shape, (0, 1))
+axis_best_spl = plt.subplot2grid(axes_shape, (1, 1))
 
 axis_deviation.set_title("Standard deviation per sweep")
 axis_deviation.set_xlabel("Sweep Index")
 axis_deviation.set_ylabel("Standard deviation")
 
 axis_spl.set_title("SPL values per frequency band")
-axis_spl.set_xlabel("Frequency (hz)")
-axis_spl.set_ylabel("SPL Leq (dB)")
-axis_spl.set_xscale('log')
-axis_spl.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
-axis_spl.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+axis_best_spl.set_title("-")
+for ax in [axis_best_spl, axis_spl]:
+  ax.set_xlabel("Frequency (hz)")
+  ax.set_ylabel("SPL Leq (dB)")
+  ax.set_xscale('log')
+  ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
+  ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 # ---- Analysis ----
 # per source
@@ -136,25 +157,25 @@ sweep_sum_sqr = sim.grid.create_grid("float64")
 sweep_deviation = sim.grid.create_grid("float64")
 sweep_ranking = sim.grid.create_grid("float64")
 
-
 deviation_plot, = axis_deviation.plot([], [], "-")
+best_spl_plot, worst_spl_plot = axis_best_spl.plot([], [], [], "-")
+max_spl_plot, min_spl_plot = axis_best_spl.plot([], [], [], "--")
 
 timings = []
 
+min_dev = float("inf")
+max_dev = -float("inf")
 
-def run_source_analysis_iteration() -> bool:
-  source_index = grid.source_index
-  location = None
-  try:
-    location = sim.grid.select_source(source_index)
-  except:
-    return True
 
+def run_source_analysis_iteration(source_index: int) -> bool:
+  global min_dev, max_dev
+  source_set = position_sets[source_index]
+  sim.grid.select_source_locations(source_set)
   spl_values = []
+  max_spl_values = []
+  min_spl_values = []
   frequencies_covered = []
   sources_covered.append(source_index)
-
-  (w, h, d) = location
 
   sweep_sum.fill(0.0)
   sweep_sum_sqr.fill(0.0)
@@ -163,21 +184,29 @@ def run_source_analysis_iteration() -> bool:
 
   start = time()
   log.info(
-      f'Picked source {source_index}/{grid.source_count} [{w}, {h}, {d}]')
+      f'Picked source set {source_index}/{len(position_sets)} with positions:')
+
+  for pos in source_set:
+    log.info('%d, %d, %d', *pos)
+
   for (index,), frequency in np.ndenumerate(testing_frequencies):
     parameters.set_signal_frequency(frequency)
     frequencies_covered.append(frequency)
     sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
     scene.rebuild()
-    sim.write_read_buffer()
+    sim.sync_read_buffers()
     sim.reset()
     # run single simulation
     sim.step(runtime_steps)
     run_sweep_analysis(grid.analysis, sweep_sum, sweep_sum_sqr,
                        sweep_deviation, sweep_ranking, analysis_key_index, index + 1)
-    avg_spl = get_avg_spl(grid.analysis, grid.geometry, analysis_key_index)
+    avg_spl, min_spl, max_spl = get_avg_spl(
+        grid.analysis, grid.geometry, analysis_key_index)
     # a_weighting = get_a_weighting(frequency)
+    # a_spl = avg_spl + a_weighting
     a_spl = avg_spl
+    max_spl_values.append(max_spl)
+    min_spl_values.append(min_spl)
     spl_values.append(a_spl)
     log.info(f'[{source_index}] {frequency:.2f}hz: {a_spl:.2f} SPL (dB)')
   deviation = get_avg_dev(sweep_deviation, grid.geometry)
@@ -185,19 +214,38 @@ def run_source_analysis_iteration() -> bool:
   deviations.append(deviation)
   spl_values_per_source.append(spl_values)
   log.info(f'Deviation: {deviation} ')
+
   if USE_VISUALS:
     axis_spl.plot(testing_frequencies, spl_values)
+    if deviation < min_dev:
+      axis_best_spl.set_title(
+          f"best/worst ({source_index}) SPL values per frequency band")
+      min_dev = deviation
+      best_spl_plot.set_data(testing_frequencies, spl_values)
+      min_spl_plot.set_data(testing_frequencies, min_spl_values)
+      max_spl_plot.set_data(testing_frequencies, max_spl_values)
+    if deviation > max_dev:
+      max_dev = deviation
+      worst_spl_plot.set_data(testing_frequencies, spl_values)
 
   if WRITE_CSV:
     csv_row = [
         time(),
         source_index,
-        w,
-        f'{(w + 0.5) * parameters.dx:.2f}',
-        h,
-        f'{(h + 0.5) * parameters.dx:.2f}',
-        d,
-        f'{(d + 0.5) * parameters.dx:.2f}',
+    ]
+
+    for i in range(SPEAKERS):
+      (w, h, d) = source_set[i]
+      csv_row += [
+          w,
+          f'{(w + 0.5) * parameters.dx:.2f}',
+          h,
+          f'{(h + 0.5) * parameters.dx:.2f}',
+          d,
+          f'{(d + 0.5) * parameters.dx:.2f}',
+      ]
+
+    csv_row += [
         f'{deviation:.4f}',
         f'{avg_spl:.4f}',
         "",
@@ -210,7 +258,7 @@ def run_source_analysis_iteration() -> bool:
   diff = end - start
   timings.append(diff)
   avg_timing = np.average(timings)
-  indexes_left = grid.source_count - source_index
+  indexes_left = len(position_sets) - source_index
   time_left = indexes_left * avg_timing
   hours = math.floor(time_left / 60 / 60)
   minutes = math.floor((time_left - hours * 60 * 60) / 60)
@@ -220,7 +268,6 @@ def run_source_analysis_iteration() -> bool:
 
   # done, signal next iteration
   log.info('----- End iteration %d -----', source_index)
-  grid.source_index += 1
   return False
 
 
@@ -230,15 +277,14 @@ if USE_REALTIME_VISUALS:
   # wm.full_screen_toggle()
   # wm.resize(1920, 1080)
 start_time = time()
-for i in range(grid.source_count):
-  run_source_analysis_iteration()
+for i in range(len(position_sets)):
+  run_source_analysis_iteration(i)
   deviation_plot.set_data(sources_covered, deviations)
 
   if USE_REALTIME_VISUALS:
-    axis_deviation.relim()
-    axis_deviation.autoscale_view()
-    axis_spl.relim()
-    axis_spl.autoscale_view()
+    for ax in [axis_best_spl, axis_deviation, axis_spl]:
+      ax.relim()
+      ax.autoscale_view()
     fig.canvas.draw()
     fig.canvas.flush_events()
     plt.tight_layout()
@@ -248,10 +294,9 @@ diff = end_time - start_time
 log.info(f'Time elapsed for full sweep: {diff:.1f}s')
 
 if USE_VISUALS:
-  axis_deviation.relim()
-  axis_deviation.autoscale_view()
-  axis_spl.relim()
-  axis_spl.autoscale_view()
+  for ax in [axis_best_spl, axis_deviation, axis_spl]:
+    ax.relim()
+    ax.autoscale_view()
   plt.tight_layout()
   plt.savefig(os.path.join(file_dir, "output", f'{output_uid}.png'), dpi=300)
 if USE_REALTIME_VISUALS:

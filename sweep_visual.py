@@ -5,7 +5,6 @@ find the optimal position based on standard deviation
 
 import math
 import os
-from re import A
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -25,7 +24,7 @@ parameters.set_max_frequency(200)
 
 SIM_TIME = 0.5
 runtime_steps = int(SIM_TIME / parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=6)
+testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
 
 scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
@@ -35,6 +34,9 @@ grid = scene.build()
 # SLICE_HEIGHT = grid.scale(1.82)
 SLICE_HEIGHT = grid.scale(.97)
 # SLICE_HEIGHT = grid.scale(.97) + 1
+
+grid.select_source_locations([grid.source_set[0], grid.source_set[-1]])
+
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
 print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
@@ -60,6 +62,7 @@ ax_mean_spl = plt.subplot2grid(axes_shape, (3, 2))
 # datasets
 recalc_axis = [ax_max_an, ax_max_pres, ax_mean_spl]
 it_data, max_an, min_an, max_pres, mean_spl, a_spl = [], [], [], [], [], []
+max_spl, min_spl = [], []
 
 # charts
 slice_tmp = grid.pressure[:, SLICE_HEIGHT, :]
@@ -75,6 +78,7 @@ color_bar_3 = plt.colorbar(slice_image_3, ax=ax_pres)
 max_pres_plot, = ax_max_pres.plot([], [], "-")
 max_an_plot, min_an_plot = ax_max_an.plot([], [], [], "-")
 mean_spl_plot, a_weighted_spl = ax_mean_spl.plot([], [], [], "-")
+max_spl_plot, min_spl_plot = ax_mean_spl.plot([], [], [], "--")
 
 ax_sim.set_title("Simulation")
 ax_sim.set_xlabel("Width Index")
@@ -96,9 +100,9 @@ ax_max_pres.set_title("Maximum Pressure")
 ax_max_pres.set_xlabel("Frequency (hz)")
 ax_max_pres.set_ylabel("Maximum value")
 
-ax_max_an.set_title("Maximum Analytical value")
+ax_max_an.set_title("Max/Min SPL value")
 ax_max_an.set_xlabel("Frequency (hz)")
-ax_max_an.set_ylabel("Maximum value")
+ax_max_an.set_ylabel("SPL (dB)")
 
 ax_mean_spl.set_title("Average SPL in listener region")
 ax_mean_spl.set_xlabel("Frequency (hz)")
@@ -137,13 +141,13 @@ def animate(i) -> None:
   sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
 
   scene.rebuild()
-  sim.write_read_buffer()
+  sim.sync_read_buffers()
   sim.reset()
   sim.step(runtime_steps)
   analysis_key_index = sim.grid.analysis_keys["LEQ"]
   run_sweep_analysis(sim.grid.analysis, sweep_sum, sweep_sum_sqr,
                      sweep_deviation, sweep_ranking, analysis_key_index, i + 1)
-  avg_spl = get_avg_spl(
+  avg_spl, min_spl_value, max_spl_value = get_avg_spl(
       sim.grid.analysis, sim.grid.geometry, analysis_key_index)
 
   leq_analysis = grid.analysis[:, :, :, analysis_key_index]
@@ -168,12 +172,16 @@ def animate(i) -> None:
   max_pres.append(slice_3_max)
   mean_spl.append(avg_spl)
   a_spl.append(avg_spl)
+  min_spl.append(min_spl_value)
+  max_spl.append(max_spl_value)
 
   max_an_plot.set_data(it_data, max_an)
   mean_spl_plot.set_data(it_data, mean_spl)
   min_an_plot.set_data(it_data, min_an)
   max_pres_plot.set_data(it_data, max_pres)
   a_weighted_spl.set_data(it_data, a_spl)
+  max_spl_plot.set_data(it_data, max_spl)
+  min_spl_plot.set_data(it_data, min_spl)
 
   for ax in recalc_axis:
     ax.relim()

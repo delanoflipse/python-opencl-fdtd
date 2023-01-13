@@ -163,12 +163,11 @@ __kernel void analysis_step(__global double *pressure,
 
     // note: log sqrt x = 0.5 * log x
     double rms_value = iteration_factor * rms_sum;
-    analysis[leq_i] = 10.0 * log10(rms_value);
+    analysis[leq_i] = rms_value > 0 ? 10.0 * log10(rms_value) : 0;
 
     double current_ewma = analysis[ewma_i];
     double ewma = alpha * rms_addition + (1 - alpha) * current_ewma;
     analysis[ewma_i] = ewma;
-    analysis[ewma_db_i] = 10.0 * log10(ewma);
+    analysis[ewma_db_i] = ewma > 0 ? 10.0 * log10(ewma) : 0;
   }
-
 }

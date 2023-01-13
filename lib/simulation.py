@@ -41,7 +41,7 @@ class Simulation:
     print(
         f'[Grid] Listeners: {self.grid.listener_count}\tSources: {self.grid.source_count}')
 
-  def write_read_buffer(self) -> None:
+  def sync_read_buffers(self) -> None:
     cl.enqueue_copy(self.program.queue,
                     self.program.beta_buffer, self.grid.beta)
     cl.enqueue_copy(self.program.queue,
