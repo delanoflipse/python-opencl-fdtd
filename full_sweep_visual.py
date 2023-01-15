@@ -25,11 +25,11 @@ MAX_FREQUENCY = 200
 OVERSAMPLING = 16
 OCTAVE_BANDS = 3
 SPEAKERS = 2
-SPEAKERS_MIN_SPACE = 2.0
+MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
 USE_REALTIME_VISUALS = True
-USE_VISUALS = True
-USE_FILE_LOGS = True
-WRITE_CSV = True
+OUTPUT_VISUALS = True
+OUTPUT_FILE_LOGS = True
+OUTPUT_CSV = True
 LOG_LEVEL = logging.DEBUG
 # -----
 
@@ -49,26 +49,22 @@ scene = ShoeboxRoomScene(parameters)
 grid = scene.build()
 # -----
 
-SLICE_HEIGHT = grid.scale(1.82)
-# SLICE_HEIGHT = grid.scale(.97)
-# SLICE_HEIGHT = grid.scale(.97) + 1
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
 analysis_key_index = sim.grid.analysis_keys["LEQ"]
 position_sets = get_n_pairs_with_min_distance(
-    grid.source_set, SPEAKERS, parameters.dx, SPEAKERS_MIN_SPACE)
+    grid.source_set, SPEAKERS, parameters.dx, MIN_DISTANCE_BETWEEN_SPEAKERS)
 
 # ---- Logging ----
 file_dir = os.path.dirname(__file__)
 log = logging.getLogger("FDTD")
 log.setLevel(LOG_LEVEL)
-# logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] - %(message)s")
 logFormatter = logging.Formatter(
     "%(asctime)s [%(levelname)-5.5s] - %(message)s")
 
 output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {scene.__class__.__name__} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}x-{OCTAVE_BANDS}o-{SPEAKERS}s]'
 
-if USE_FILE_LOGS:
+if OUTPUT_FILE_LOGS:
   fileHandler = logging.FileHandler(
       "{0}/{1}.log".format(os.path.join(file_dir, "output"), output_uid))
   fileHandler.setFormatter(logFormatter)
@@ -87,7 +83,7 @@ log.info('-----------------------------')
 # ----- Simulation end -----
 
 # ---- CSV ----
-if WRITE_CSV:
+if OUTPUT_CSV:
   csv_path = os.path.join(file_dir, "output", f"{output_uid}.csv")
   csv_file = open(csv_path, 'w', encoding="utf-8", newline='')
   writer = csv.writer(csv_file)
@@ -215,7 +211,7 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   spl_values_per_source.append(spl_values)
   log.info(f'Deviation: {deviation} ')
 
-  if USE_VISUALS:
+  if OUTPUT_VISUALS:
     axis_spl.plot(testing_frequencies, spl_values)
     if deviation < min_dev:
       axis_best_spl.set_title(
@@ -228,7 +224,7 @@ def run_source_analysis_iteration(source_index: int) -> bool:
       max_dev = deviation
       worst_spl_plot.set_data(testing_frequencies, spl_values)
 
-  if WRITE_CSV:
+  if OUTPUT_CSV:
     csv_row = [
         time(),
         source_index,
@@ -293,7 +289,7 @@ end_time = time()
 diff = end_time - start_time
 log.info(f'Time elapsed for full sweep: {diff:.1f}s')
 
-if USE_VISUALS:
+if OUTPUT_VISUALS:
   for ax in [axis_best_spl, axis_deviation, axis_spl]:
     ax.relim()
     ax.autoscale_view()
@@ -302,5 +298,5 @@ if USE_VISUALS:
 if USE_REALTIME_VISUALS:
   plt.show(block=True)
 
-if WRITE_CSV:
+if OUTPUT_CSV:
   csv_file.close()
