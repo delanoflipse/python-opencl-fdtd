@@ -196,7 +196,7 @@ def get_source_locations(geometry: np.ndarray) -> list[tuple[int, int, int]]:
   return source_set
 
 
-@ njit(parallel=True)
+@njit(parallel=True)
 def count_locations(geometry: np.ndarray) -> tuple[int, int]:
   """Count the number of cells that have the SOURCE_REGION_FLAG set"""
   count_src = 0
@@ -211,7 +211,7 @@ def count_locations(geometry: np.ndarray) -> tuple[int, int]:
   return count_src, count_lis
 
 
-@ njit(parallel=True)
+@njit(parallel=True)
 def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
   """Set neighbour flags for geometry"""
   for w in prange(geometry.shape[0]):
@@ -236,7 +236,7 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
         neighbours[w, h, d] = neighour_flags
 
 
-@ njit(parallel=True)
+@njit(parallel=True)
 def populate_inner_beta(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta) -> None:
   """Set neighbour flags for geometry"""
   for w in prange(geometry.shape[0]):
