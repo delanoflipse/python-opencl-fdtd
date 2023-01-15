@@ -43,6 +43,7 @@ grid = scene.build()
 # SLICE_HEIGHT = grid.scale(1.32)
 # SLICE_HEIGHT = grid.scale(1.82)
 SLICE_HEIGHT = grid.scale(.97)
+grid.select_source_locations([grid.source_set[0]])
 
 sim = Simulation(grid=grid, parameters=params)
 sim.print_statistics()
@@ -50,7 +51,8 @@ sim.print_statistics()
 # sim.generator = GaussianMonopulseGenerator(params.signal_frequency)
 # sim.generator = GaussianModulatedImpulseGenerator(params.signal_frequency)
 hann_window = HannWindow(width=0.1, end_signal=math.nan)
-sim.generator = WindowModulatedSinoidImpulse(params.signal_frequency, hann_window)
+sim.generator = WindowModulatedSinoidImpulse(
+    params.signal_frequency, hann_window)
 # sim.generator = DiracImpulseGenerator()
 # sim.generator = SimpleSinoidGenerator(params.signal_frequency)
 
