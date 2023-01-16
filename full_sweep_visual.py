@@ -16,17 +16,17 @@ from lib.impulse_generators import SimpleSinoidGenerator
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
+from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene
 from lib.simulation import Simulation
 
 # --- SELECT PARAMETERS ---
 SIMULATED_TIME = 0.35
 MAX_FREQUENCY = 200
-OVERSAMPLING = 16
-OCTAVE_BANDS = 3
-SPEAKERS = 2
+OVERSAMPLING = 12
+OCTAVE_BANDS = 12
+SPEAKERS = 1
 MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
-USE_REALTIME_VISUALS = True
+USE_REALTIME_VISUALS = False
 OUTPUT_VISUALS = True
 OUTPUT_FILE_LOGS = True
 OUTPUT_CSV = True
@@ -43,8 +43,9 @@ testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
-scene = ShoeboxRoomScene(parameters)
+# scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
+scene = CuboidReferenceScene(parameters)
 # scene = ConcertHallScene(parameters)
 grid = scene.build()
 # -----
@@ -75,7 +76,7 @@ consoleHandler.setFormatter(logFormatter)
 log.addHandler(consoleHandler)
 
 log.info('---- Statring simulation ----')
-log.info('%d pairs', len(position_sets))
+log.info('%d pair(s)', len(position_sets))
 log.info('%d steps per sim', runtime_steps)
 log.info('%d frequencies', testing_frequencies.size)
 log.info('Scene: %s', scene.__class__.__name__)
@@ -155,7 +156,8 @@ sweep_ranking = sim.grid.create_grid("float64")
 
 deviation_plot, = axis_deviation.plot([], [], "-")
 best_spl_plot, worst_spl_plot = axis_best_spl.plot([], [], [], "-")
-max_spl_plot, min_spl_plot = axis_best_spl.plot([], [], [], "--")
+max_spl_plot, = axis_best_spl.plot([], [], "--")
+min_spl_plot, = axis_best_spl.plot([], [], "--")
 
 timings = []
 
@@ -180,7 +182,7 @@ def run_source_analysis_iteration(source_index: int) -> bool:
 
   start = time()
   log.info(
-      f'Picked source set {source_index}/{len(position_sets)} with positions:')
+      f'Picked source set {source_index + 1}/{len(position_sets)} with positions:')
 
   for pos in source_set:
     log.info('%d, %d, %d', *pos)
