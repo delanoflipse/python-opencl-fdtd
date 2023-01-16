@@ -200,3 +200,20 @@ class ConcertHallScene(Scene):
     h_source = self.grid.scale(1.35)
     d_source = self.grid.scale(self.depth-0.59)
     self.grid.geometry[w_source, h_source, d_source] |= SOURCE_REGION_FLAG
+
+class CuboidReferenceScene(Scene):
+  def __init__(self, parameters: SimulationParameters) -> None:
+    super().__init__(parameters)
+    self.width = self.height = self.depth = 7.0
+    self.shape = (self.width, self.height, self.depth)
+    
+  def mark_regions(self) -> None:
+    if self.grid is None:
+      return
+    # run_frequency = self.grid.parameters.signal_frequency
+    w_source = self.grid.scale(self.width / 2)
+    h_source = self.grid.scale(self.height / 2)
+    d_source = self.grid.scale(self.depth / 2)
+    self.grid.geometry[w_source, h_source, d_source] |= SOURCE_REGION_FLAG
+    self.grid.edge_betas.set_all(0.0)
+    self.grid.fill_region(geometry_flag=LISTENER_FLAG)
