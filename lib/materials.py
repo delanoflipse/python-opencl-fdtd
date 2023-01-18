@@ -17,6 +17,8 @@ def log_interp1d(xx, yy, kind='linear'):
 
 class SimulatedMaterial:
   # https://calculla.com/sound_absorption_coefficients
+  # https://www.acoustic.ua/st/web_absorption_data_eng.pdf
+  # https://cds.cern.ch/record/1251519/files/978-3-540-48830-9_BookBackMatter.pdf
   # 1 - alpha = beta
   def __init__(self, material_name: str):
     self.interp_function = None
@@ -26,7 +28,7 @@ class SimulatedMaterial:
     if name == "plaster":
       self.interp_function = log_interp1d([125, 250], [0.29, 0.1])
       return
-    if name == "concrete":
+    if name == "painted_concrete":
       self.interp_function = log_interp1d([125, 250], [0.01, 0.01])
       return
     if name == "laminate":
@@ -34,6 +36,25 @@ class SimulatedMaterial:
       return
     if name == "wood":
       self.interp_function = log_interp1d([125, 250], [0.1, 0.07])
+      return
+    if name == "carpet":
+      self.interp_function = log_interp1d([125, 250], [0.1, 0.15])
+    if name == "cellulose":
+      self.interp_function = log_interp1d([125, 250], [0.05, 0.16])
+      return
+    if name == "whiteboard":
+      # TODO
+      self.interp_function = log_interp1d([125, 250], [0.1, 0.16])
+      return
+    if name == "metal":
+      # TODO
+      self.interp_function = log_interp1d([125, 250], [0.35, 0.39])
+      return
+    if name == "hard_wood":
+      self.interp_function = log_interp1d([125, 250], [0.1, 0.07])
+      return
+    if name == "glass":
+      self.interp_function = log_interp1d([125, 250], [0.15, 0.05])
       return
 
   def get_beta(self, frequency: float = 125) -> float:
