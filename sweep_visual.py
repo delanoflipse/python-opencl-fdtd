@@ -14,7 +14,7 @@ from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpul
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene
+from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
 from lib.simulation import Simulation
 
 # ---- Simulation ----
@@ -28,8 +28,9 @@ testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
 
 # scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
-scene = CuboidReferenceScene(parameters)
+# scene = CuboidReferenceScene(parameters)
 # scene = ConcertHallScene(parameters)
+scene = OfficeScene(parameters)
 grid = scene.build()
 
 # SLICE_HEIGHT = grid.scale(1.82)

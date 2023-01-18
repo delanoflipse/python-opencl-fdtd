@@ -16,13 +16,13 @@ from lib.impulse_generators import SimpleSinoidGenerator
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene
+from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
 from lib.simulation import Simulation
 
 # --- SELECT PARAMETERS ---
-SIMULATED_TIME = 0.35
+SIMULATED_TIME = 0.3
 MAX_FREQUENCY = 200
-OVERSAMPLING = 12
+OVERSAMPLING = 16
 OCTAVE_BANDS = 12
 SPEAKERS = 1
 MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
@@ -45,7 +45,8 @@ testing_frequencies = get_octaval_center_frequencies(
 # -- SELECT SCENE --
 # scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
-scene = CuboidReferenceScene(parameters)
+# scene = CuboidReferenceScene(parameters)
+scene = OfficeScene(parameters)
 # scene = ConcertHallScene(parameters)
 grid = scene.build()
 # -----
@@ -213,7 +214,7 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   spl_values_per_source.append(spl_values)
   log.info(f'Deviation: {deviation} ')
 
-  if OUTPUT_VISUALS:
+  if OUTPUT_VISUALS and deviation != 0.0:
     axis_spl.plot(testing_frequencies, spl_values)
     if deviation < min_dev:
       axis_best_spl.set_title(
