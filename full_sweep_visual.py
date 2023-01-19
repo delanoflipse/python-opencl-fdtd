@@ -26,7 +26,7 @@ OVERSAMPLING = 16
 OCTAVE_BANDS = 12
 SPEAKERS = 1
 MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
-USE_REALTIME_VISUALS = False
+USE_REALTIME_VISUALS = True
 OUTPUT_VISUALS = True
 OUTPUT_FILE_LOGS = True
 OUTPUT_CSV = True
@@ -43,10 +43,10 @@ testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
-# scene = ShoeboxRoomScene(parameters)
+scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
 # scene = CuboidReferenceScene(parameters)
-scene = OfficeScene(parameters)
+# scene = OfficeScene(parameters)
 # scene = ConcertHallScene(parameters)
 grid = scene.build()
 # -----

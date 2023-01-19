@@ -92,6 +92,16 @@ class ShoeboxRoomScene(Scene):
         geometry_flag=WALL_FLAG,
         beta=wood_material.get_beta(run_frequency),
     )
+    # bed
+    # 140x200x50
+    self.grid.fill_region(
+        d_min=self.depth - 2.0,
+        h_max=0.5,
+        w_min=1.75,
+        w_max=self.width - 0.45,
+        geometry_flag=WALL_FLAG,
+        beta=wood_material.get_beta(run_frequency),
+    )
 
     # --- SOURCE LOCATIONS ---
     # speaker_locations
@@ -233,6 +243,30 @@ class CuboidReferenceScene(Scene):
       for h_opt in [h1_2_source, h1_4_source, h3_4_source]:
         for d_opt in [d1_2_source, d1_4_source, d3_4_source]:
           self.grid.geometry[w_opt, h_opt, d_opt] |= SOURCE_REGION_FLAG
+
+    self.grid.edge_betas.set_all(0.0)
+    self.grid.fill_region(geometry_flag=LISTENER_FLAG)
+
+
+class LShapedRoom(Scene):
+  def __init__(self, parameters: SimulationParameters) -> None:
+    super().__init__(parameters)
+    self.height = 6.0
+    self.width = 6.0
+    self.depth = 6.0
+    self.shape = (self.width, self.height, self.depth)
+
+  def mark_regions(self) -> None:
+    if self.grid is None:
+      return
+    # run_frequency = self.grid.parameters.signal_frequency
+    self.grid.fill_region(
+        w_min=self.width / 2, d_max=self.depth/2, geometry_flag=WALL_FLAG, beta=0.0)
+
+    w_source = self.grid.scale(self.width / 3)
+    h_source = self.grid.scale(self.height / 2)
+    d_source = self.grid.scale(self.depth / 3)
+    self.grid.geometry[w_source, h_source, d_source] |= SOURCE_REGION_FLAG
 
     self.grid.edge_betas.set_all(0.0)
     self.grid.fill_region(geometry_flag=LISTENER_FLAG)

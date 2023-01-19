@@ -6,17 +6,16 @@ from lib.parameters import SimulationParameters
 from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
 from lib.simulation import Simulation
 
-iterations_per_step = 2 ** 11
+iterations_per_step = 2 ** 12
 # count = 40000 // iterations_per_step
 step_count = 2 ** 3
 params = SimulationParameters()
-# params.set_oversampling(9)
-params.set_max_frequency(400)
-params.set_signal_frequency(200)
+params.set_oversampling(16)
+params.set_max_frequency(200)
 
-scene = ShoeboxRoomScene(params)
-# scene = BellBoxScene(parameters, has_wall=True)
-# scene = ConcertHallScene(parameters)
+# scene = ShoeboxRoomScene(params)
+# scene = BellBoxScene(params, has_wall=True)
+scene = ConcertHallScene(params)
 grid = scene.build()
 grid.select_source_locations([grid.source_set[0]])
 sim = Simulation(params, grid)
