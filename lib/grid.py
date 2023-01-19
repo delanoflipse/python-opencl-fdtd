@@ -160,27 +160,24 @@ class SimulationGrid:
     self.is_build = True
 
   def select_source_locations(self, locations: list[tuple[int, int, int]]) -> None:
-    set_source_locations_on(self.geometry, locations)
+    unset_source_flag(self.geometry)
+    for position in locations:
+      p_w, p_h, p_d = position
+      self.geometry[p_w, p_h, p_d] |= SOURCE_FLAG
 
   def rebuild(self) -> None:
     """rebuild the geometry"""
     populate_inner_beta(self.geometry, self.beta, self.edge_betas)
 
 
-@njit
-def set_source_locations_on(geometry: np.ndarray, locations: list[tuple[int, int, int]]) -> None:
+@njit(parallel=True)
+def unset_source_flag(geometry: np.ndarray) -> None:
   """Set the nth source region cell to be the current source"""
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
         if geometry[w, h, d] & SOURCE_FLAG > 0:
           geometry[w, h, d] &= ~SOURCE_FLAG
-
-        for p in prange(len(locations)):
-          p_w, p_h, p_d = locations[p]
-          if p_w == w and p_h == h and p_d == d:
-            geometry[w, h, d] |= SOURCE_FLAG
-
   return
 
 
@@ -218,19 +215,19 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
         neighour_flags = 0
-        if w > 0 and geometry[w - 1, h, d] != 1:
+        if w > 0 and geometry[w - 1, h, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_0
-        if w < geometry.shape[0] - 1 and geometry[w + 1, h, d] != 1:
+        if w < geometry.shape[0] - 1 and geometry[w + 1, h, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_1
 
-        if h > 0 and geometry[w, h - 1, d] != 1:
+        if h > 0 and geometry[w, h - 1, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_2
-        if h < geometry.shape[1] - 1 and geometry[w, h + 1, d] != 1:
+        if h < geometry.shape[1] - 1 and geometry[w, h + 1, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_3
 
-        if d > 0 and geometry[w, h, d - 1] != 1:
+        if d > 0 and geometry[w, h, d - 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_4
-        if d < geometry.shape[2] - 1 and geometry[w, h, d + 1] != 1:
+        if d < geometry.shape[2] - 1 and geometry[w, h, d + 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_5
 
         neighbours[w, h, d] = neighour_flags

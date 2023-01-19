@@ -14,28 +14,31 @@ from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpul
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
+from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
 from lib.simulation import Simulation
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-# params.set_oversampling(12)
+# parameters.set_oversampling(12)
 parameters.set_max_frequency(200)
 
-SIM_TIME = 0.5
+SIM_TIME = 0.35
 runtime_steps = int(SIM_TIME / parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
 
-scene = ShoeboxRoomScene(parameters)
+# scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
+# scene = CuboidReferenceScene(parameters)
 # scene = ConcertHallScene(parameters)
+scene = OfficeScene(parameters)
 grid = scene.build()
 
 # SLICE_HEIGHT = grid.scale(1.82)
-SLICE_HEIGHT = grid.scale(.97)
+SLICE_HEIGHT = grid.scale(scene.height / 2)
+# SLICE_HEIGHT = grid.scale(.97)
 # SLICE_HEIGHT = grid.scale(.97) + 1
 
-grid.select_source_locations([grid.source_set[0], grid.source_set[-1]])
+grid.select_source_locations([grid.source_set[0]])
 
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
@@ -77,8 +80,9 @@ color_bar_3 = plt.colorbar(slice_image_3, ax=ax_pres)
 
 max_pres_plot, = ax_max_pres.plot([], [], "-")
 max_an_plot, min_an_plot = ax_max_an.plot([], [], [], "-")
-mean_spl_plot, a_weighted_spl = ax_mean_spl.plot([], [], [], "-")
-max_spl_plot, min_spl_plot = ax_mean_spl.plot([], [], [], "--")
+mean_spl_plot, = ax_mean_spl.plot([], [], "-")
+max_spl_plot, = ax_mean_spl.plot([], [], "--")
+min_spl_plot, = ax_mean_spl.plot([], [], "--")
 
 ax_sim.set_title("Simulation")
 ax_sim.set_xlabel("Width Index")
@@ -171,7 +175,6 @@ def animate(i) -> None:
   min_an.append(min_l_eq)
   max_pres.append(slice_3_max)
   mean_spl.append(avg_spl)
-  a_spl.append(avg_spl)
   min_spl.append(min_spl_value)
   max_spl.append(max_spl_value)
 
@@ -179,7 +182,6 @@ def animate(i) -> None:
   mean_spl_plot.set_data(it_data, mean_spl)
   min_an_plot.set_data(it_data, min_an)
   max_pres_plot.set_data(it_data, max_pres)
-  a_weighted_spl.set_data(it_data, a_spl)
   max_spl_plot.set_data(it_data, max_spl)
   min_spl_plot.set_data(it_data, min_spl)
 

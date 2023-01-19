@@ -1,4 +1,5 @@
 from asyncio import wait_for
+from multiprocessing.connection import wait
 import os
 import math
 import numpy as np
@@ -30,6 +31,7 @@ class Simulation:
     self.iteration = 0
     self.signal_set = []
     self.time_set = []
+    self.sync_pressure_buffers()
 
   def print_statistics(self) -> None:
     print(f'Kernel platform: {self.program.platforms[0].name}')
@@ -42,17 +44,39 @@ class Simulation:
         f'[Grid] Listeners: {self.grid.listener_count}\tSources: {self.grid.source_count}')
 
   def sync_read_buffers(self) -> None:
-    cl.enqueue_copy(self.program.queue,
-                    self.program.beta_buffer, self.grid.beta)
-    cl.enqueue_copy(self.program.queue,
-                    self.program.geometry_buffer, self.grid.geometry)
+    args = {
+        "is_blocking": False,
+    }
+    prog = self.program
+    grid = self.grid
+    queue = self.program.queue
+    cl.wait_for_events([
+        cl.enqueue_copy(queue, prog.beta_buffer, grid.beta, **args),
+        cl.enqueue_copy(queue, prog.geometry_buffer, grid.geometry, **args),
+    ])
+
+  def sync_pressure_buffers(self) -> None:
+    args = {
+        "is_blocking": False,
+    }
+    prog = self.program
+    grid = self.grid
+    queue = self.program.queue
+    cl.wait_for_events([
+        cl.enqueue_copy(queue, prog.pressure_previous_buffer,
+                        grid.pressure_previous, **args),
+        cl.enqueue_copy(queue, prog.pressure_next_buffer,
+                        grid.pressure_next, **args),
+        cl.enqueue_copy(queue, prog.pressure_buffer, grid.pressure, **args),
+        cl.enqueue_copy(queue, prog.analysis_buffer, grid.analysis, **args),
+    ])
 
   def enqueue_copy(self, dest, src, is_blocking=False, **kwargs) -> cl.Event:
     # kwargs["is_blocking"] = is_blocking
     return cl.enqueue_copy(self.program.queue, dest, src, is_blocking=False)
 
   def step(self, step_count: int = 1) -> None:
-    """Proceed the simulation one or more steps"""
+    """Proceed the simulation one or more steps, note: only writes back pressure and analysis values"""
     # initial write from host to device
     prog = self.program
     grid = self.grid
@@ -63,12 +87,13 @@ class Simulation:
         "is_blocking": False,
     }
 
-    wait_event = [
-        cl.enqueue_copy(queue, prog.pressure_previous_buffer,
-                        grid.pressure_previous, **args),
-        cl.enqueue_copy(queue, prog.pressure_buffer, grid.pressure, **args),
-        cl.enqueue_copy(queue, prog.analysis_buffer, grid.analysis, **args),
-    ]
+    # wait_event = [
+    #     cl.enqueue_copy(queue, prog.pressure_previous_buffer,
+    #                     grid.pressure_previous, **args),
+    #     cl.enqueue_copy(queue, prog.pressure_buffer, grid.pressure, **args),
+    #     cl.enqueue_copy(queue, prog.analysis_buffer, grid.analysis, **args),
+    # ]
+    wait_event = []
 
     for i in range(step_count):
       # get next signal value
@@ -92,6 +117,7 @@ class Simulation:
           queue, prog.step_kernel, kernel_global_size, None, wait_for=wait_event)
 
       # stream result into right buffer for next kernel run
+      # TODO: can we change the pointer of a buffer to another to round robin change the buffers? Less writing
       kernel_wait = [kernel_event1]
       buffer_write_wait = [
           cl.enqueue_copy(queue, prog.pressure_previous_buffer,
@@ -99,7 +125,7 @@ class Simulation:
           cl.enqueue_copy(queue, prog.pressure_buffer,
                           prog.pressure_next_buffer, wait_for=kernel_wait),
       ]
-      
+
       # run analysis on previous values
       kernel_event2 = cl.enqueue_nd_range_kernel(
           queue, prog.analysis_kernel, kernel_global_size, None, wait_for=buffer_write_wait)
@@ -109,12 +135,12 @@ class Simulation:
       self.iteration += 1
 
     # write back to host
-    cl.enqueue_copy(queue, grid.pressure_previous,
-                    prog.pressure_buffer, wait_for=wait_event, **args)
-    cl.enqueue_copy(queue, grid.pressure, prog.pressure_next_buffer,
-                    wait_for=wait_event, **args)
-    final_event = cl.enqueue_copy(
-        queue, grid.analysis, prog.analysis_buffer, wait_for=wait_event, **args)
+    final_events = [
+        cl.enqueue_copy(queue, grid.pressure, prog.pressure_buffer,
+                        wait_for=wait_event, **args),
+        cl.enqueue_copy(
+            queue, grid.analysis, prog.analysis_buffer, wait_for=wait_event, **args)
+    ]
 
     # make sure event is done before processing data further!
-    final_event.wait()
+    cl.wait_for_events(final_events)

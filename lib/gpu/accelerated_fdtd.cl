@@ -42,9 +42,14 @@ __kernel void compact_step(__global double *previous_pressure,
     return;
   }
 
-  if (is_wall || neighbour_flag == 0) {
-    pressure_next[i] = 0.0;
+  if (is_wall) {
+    pressure_next[i] = NAN;
     // pressure_next[i] = 0.001;
+    return;
+  }
+
+  if (neighbour_flag == 0) {
+    pressure_next[i] = 0.0;
     return;
   }
 

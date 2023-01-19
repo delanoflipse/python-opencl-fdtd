@@ -6,6 +6,7 @@ from lib.impulse_generators import GaussianModulatedImpulseGenerator
 from lib.simulation import Simulation
 from numba import njit, prange
 
+
 def frequency_sweep(sim: Simulation) -> np.ndarray:
   sweep_analysis = sim.grid.create_grid("float64")
   runtime_steps = int(0.5 / sim.parameters.dt)
@@ -78,9 +79,10 @@ def get_avg_dev(standard_deviation: np.ndarray, flags: np.ndarray) -> float:
 def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int) -> tuple[float, float, float]:
   """Set neighbour flags for geometry"""
   _sum = 0.0
-  _count = 0
-  _min = float('inf')
-  _max = -float('inf')
+  _count = 0.0
+  _min: float = 1e999
+  _max: float = -1e999
+
   for w in prange(analytical_values.shape[0]):
     for h in prange(analytical_values.shape[1]):
       for d in prange(analytical_values.shape[2]):
@@ -88,14 +90,14 @@ def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int
         if cell_flags & LISTENER_FLAG == 0:
           continue
 
-        v_l_eq = analytical_values[w, h, d, leq_index]
+        v_l_eq: float = analytical_values[w, h, d, leq_index]
         if math.isnan(v_l_eq):
           continue
         _sum += v_l_eq
         _min = min(_min, v_l_eq)
         _max = max(_max, v_l_eq)
-        _count += 1
-  if _count == 0:
-    return 0.0
+        _count += 1.0
+  if _count == 0.0:
+    return (0.0, 0.0, 0.0)
 
-  return _sum / _count, _min, _max
+  return (_sum / _count, _min, _max)
