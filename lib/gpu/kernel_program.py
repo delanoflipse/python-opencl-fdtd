@@ -23,7 +23,12 @@ class SimulationKernelProgram:
     os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
     print(f'debug: platforms')
     self.platforms = cl.get_platforms()
-    print(f'debug: context')
+    for platform in cl.get_platforms():
+      print(f'platform: {platform.name}')
+      for device in platform.get_devices():
+        print(f'- device: {device.name}')
+
+    print(f'debug: context.')
     self.ctx = cl.create_some_context(interactive=False)
 
     print(f'debug: queue')
