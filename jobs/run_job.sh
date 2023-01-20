@@ -22,7 +22,7 @@ conda activate /home/dflipse/python-opencl-fdtd/dhpc
 
 previous=$(/usr/bin/nvidia-smi --query-accounted-apps='gpu_utilization,mem_utilization,max_memory_usage,time' --format='csv' | /usr/bin/tail -n '+2')
 
-srun python ../full_sweep.py
+srun python ./full_sweep.py
 
 /usr/bin/nvidia-smi --query-accounted-apps='gpu_utilization,mem_utilization,max_memory_usage,time' --format='csv' | /usr/bin/grep -v -F "$previous"
 conda deactivate
