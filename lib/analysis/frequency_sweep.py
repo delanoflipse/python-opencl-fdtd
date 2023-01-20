@@ -5,6 +5,7 @@ from lib.grid import LISTENER_FLAG
 from lib.impulse_generators import GaussianModulatedImpulseGenerator
 from lib.simulation import Simulation
 from numba import njit, prange
+from typing import Tuple
 
 
 def frequency_sweep(sim: Simulation) -> np.ndarray:
@@ -76,7 +77,7 @@ def get_avg_dev(standard_deviation: np.ndarray, flags: np.ndarray) -> float:
 
 
 @njit(parallel=True)
-def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int) -> tuple[float, float, float]:
+def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int) -> Tuple[float, float, float]:
   """Set neighbour flags for geometry"""
   _sum = 0.0
   _count = 0.0

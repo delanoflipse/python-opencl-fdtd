@@ -1,7 +1,8 @@
 import itertools
 import math
+from typing import Tuple, List
 
-def get_n_pairs_with_min_distance(locations: list[tuple[int, int, int]], n_count:int, spacing: float, min_space: float) -> list[list[tuple[int, int, int]]]:
+def get_n_pairs_with_min_distance(locations: List[Tuple[int, int, int]], n_count:int, spacing: float, min_space: float) -> List[List[Tuple[int, int, int]]]:
   if n_count == 1:
     return list(map(lambda x: [x], locations))
   pairs:  list[list[tuple[int, int, int]]] = []
