@@ -42,10 +42,10 @@ testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
-scene = ShoeboxRoomScene(parameters)
+# scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
 # scene = CuboidReferenceScene(parameters)
-# scene = OfficeScene(parameters)
+scene = OfficeScene(parameters)
 # scene = ConcertHallScene(parameters)
 grid = scene.build()
 # -----
