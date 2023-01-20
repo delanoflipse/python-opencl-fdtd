@@ -13,3 +13,5 @@ or manually add these packages:
 - scipy
 - matplotlib
 - pyopencl
+- pocl
+- ocl-icd-system

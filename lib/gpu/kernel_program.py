@@ -56,7 +56,6 @@ class SimulationKernelProgram:
     with open(loc, encoding="utf-8") as file:
       source = file.read()
 
-    print(source)
     print(f'debug: program')
     prg = cl.Program(self.ctx, source).build()
 
