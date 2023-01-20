@@ -1,16 +1,10 @@
-from asyncio import wait_for
-from multiprocessing.connection import wait
-import os
-import math
 import numpy as np
-from numba import njit, prange
 
 import pyopencl as cl
 from lib.gpu.kernel_program import SimulationKernelProgram
-from lib.grid import SimulationGrid, populate_neighbours
+from lib.grid import SimulationGrid
 from lib.impulse_generators import ImpulseGenerator
 from lib.parameters import SimulationParameters
-
 
 class Simulation:
   """Handles the simulation state and can perform a step"""

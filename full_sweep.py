@@ -8,6 +8,7 @@ from datetime import datetime
 from time import time
 import numpy as np
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
