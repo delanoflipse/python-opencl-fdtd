@@ -21,7 +21,7 @@ unset CONDA_SHLVL
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
 mkdir -p /scratch/${USER}/.conda
-conda activate /scratch/${USER}/.conda
+conda create -p -y /scratch/${USER}/.conda
 conda install -y numpy numba scipy matplotlib
 conda install -y -c conda-forge pyopencl
 
