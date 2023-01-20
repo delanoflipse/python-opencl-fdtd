@@ -451,13 +451,22 @@ class OfficeScene(Scene):
     )
 
     # ---- LISTENER REGIONS -----
-    wall_offset = 0.7
+    # wall_offset = 0.7
+    # self.grid.fill_region(
+    #     d_min=wall_offset,
+    #     d_max=self.depth - wall_offset,
+    #     w_min=wall_offset,
+    #     w_max=self.width - wall_offset,
+    #     h_min=1.2,
+    #     h_max=2.0,
+    #     geometry_flag=LISTENER_FLAG,
+    # )
     self.grid.fill_region(
-        d_min=wall_offset,
-        d_max=self.depth - wall_offset,
-        w_min=wall_offset,
-        w_max=self.width - wall_offset,
-        h_min=1.2,
-        h_max=2.0,
+        d_min=2.2,
+        d_max=2.5,
+        w_min=1,
+        w_max=2,
+        h_min=0.5,
+        h_max=1.5,
         geometry_flag=LISTENER_FLAG,
     )

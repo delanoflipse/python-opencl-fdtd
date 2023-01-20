@@ -1,4 +1,14 @@
 
+from lib.simulation import Simulation
+from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
+from lib.parameters import SimulationParameters
+from lib.math.octaves import get_octaval_center_frequencies
+from lib.math.decibel_weightings import get_a_weighting
+from lib.impulse_generators import SimpleSinoidGenerator
+from lib.analysis.source_pairs import get_n_pairs_with_min_distance
+from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
+from matplotlib.animation import FuncAnimation
+import matplotlib.pyplot as plt
 import csv
 import math
 import logging
@@ -9,22 +19,12 @@ from time import time
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
-from lib.analysis.source_pairs import get_n_pairs_with_min_distance
-from lib.impulse_generators import SimpleSinoidGenerator
-from lib.math.decibel_weightings import get_a_weighting
-from lib.math.octaves import get_octaval_center_frequencies
-from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
-from lib.simulation import Simulation
 
 # --- SELECT PARAMETERS ---
 SIMULATED_TIME = 0.3
 MAX_FREQUENCY = 200
-OVERSAMPLING = 16
-OCTAVE_BANDS = 12
+OVERSAMPLING = 24
+OCTAVE_BANDS = 24
 SPEAKERS = 1
 MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
 OUTPUT_VISUALS = True
@@ -58,8 +58,8 @@ position_sets = get_n_pairs_with_min_distance(
     grid.source_set, SPEAKERS, parameters.dx, MIN_DISTANCE_BETWEEN_SPEAKERS)
 
 # ---- Logging ----
-# file_dir = os.path.dirname(__file__)
-file_dir = "/home/dflipse/python-opencl-fdtd"
+file_dir = os.path.dirname(__file__)
+# file_dir = "/home/dflipse/python-opencl-fdtd"
 log = logging.getLogger("FDTD")
 log.setLevel(LOG_LEVEL)
 logFormatter = logging.Formatter(

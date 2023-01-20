@@ -2,9 +2,9 @@
 
 #SBATCH --job-name="fdtd-run"
 #SBATCH --partition=gpu
-#SBATCH --time=00:40:00
+#SBATCH --time=12:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=3G
 #SBATCH --gpus-per-task=1
 #SBATCH --gres=gpu:1
