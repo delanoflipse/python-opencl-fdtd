@@ -57,7 +57,8 @@ position_sets = get_n_pairs_with_min_distance(
     grid.source_set, SPEAKERS, parameters.dx, MIN_DISTANCE_BETWEEN_SPEAKERS)
 
 # ---- Logging ----
-file_dir = os.path.dirname(__file__)
+# file_dir = os.path.dirname(__file__)
+file_dir = "/home/dflipse/python-opencl-fdtd"
 log = logging.getLogger("FDTD")
 log.setLevel(LOG_LEVEL)
 logFormatter = logging.Formatter(
