@@ -22,6 +22,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 
 mkdir -p /scratch/${USER}/.conda
 conda create -y -p /scratch/${USER}/.conda
+conda activate /scratch/${USER}/.conda
 conda install -y numpy numba scipy matplotlib
 conda install -y -c conda-forge pyopencl
 
