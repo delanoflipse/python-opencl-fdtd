@@ -51,10 +51,12 @@ class SimulationKernelProgram:
     with open(loc, encoding="utf-8") as file:
       source = file.read()
 
+    print(source)
     print(f'debug: program')
     prg = cl.Program(self.ctx, source).build()
 
     # compact step kernel
+    print(f'debug: args')
     self.step_kernel = prg.compact_step
     self.step_kernel.set_arg(0, self.pressure_previous_buffer)
     self.step_kernel.set_arg(1, self.pressure_buffer)

@@ -5,26 +5,18 @@ from lib.impulse_generators import GaussianModulatedImpulseGenerator
 import numpy as np
 import time
 
-print(f'debug: pulse')
-print(f'debug: params')
-print(f'debug: scene')
-print(f'debug: sim')
-
 iterations_per_step = 2 ** 12
 # count = 40000 // iterations_per_step
 step_count = 2 ** 3
 params = SimulationParameters()
 params.set_oversampling(16)
 params.set_max_frequency(200)
-print(f'debug: parameters')
 # scene = ShoeboxRoomScene(params)
 # scene = BellBoxScene(params, has_wall=True)
 scene = ConcertHallScene(params)
 grid = scene.build()
 grid.select_source_locations([grid.source_set[0]])
-print(f'debug: scene')
 sim = Simulation(params, grid)
-print(f'debug: signal')
 sim.generator = GaussianModulatedImpulseGenerator(params.max_frequency)
 
 sim.print_statistics()
