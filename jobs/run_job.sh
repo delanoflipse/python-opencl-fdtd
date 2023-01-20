@@ -7,6 +7,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=3G
 #SBATCH --gpus-per-task=1
+#SBATCH --gres=gpu:1
 
 module load 2022r2
 module load python

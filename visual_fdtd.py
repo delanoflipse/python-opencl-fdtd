@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.parameters import SimulationParameters
-from lib.scenes import LShapedRoom, ShoeboxRoomScene, BellBoxScene, ConcertHallScene, OfficeScene
+from lib.scenes import LShapedRoom, ShoeboxRoomScene, BellBoxScene, ConcertHallScene, OfficeScene, CuboidReferenceScene
 from lib.simulation import Simulation
 
 ITERATIONS_PER_STEP: int = 20
@@ -38,11 +38,13 @@ parameters.set_oversampling(16)
 parameters.set_max_frequency(200)
 parameters.set_signal_frequency(400.0)
 
-scene = ShoeboxRoomScene(parameters)
+# scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
 # scene = LShapedRoom(parameters)
+scene = CuboidReferenceScene(parameters)
 # scene = ConcertHallScene(parameters)
 # scene = OfficeScene(params)
+
 grid = scene.build()
 
 # SLICE_HEIGHT = grid.scale(1.32)

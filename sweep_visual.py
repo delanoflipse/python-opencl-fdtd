@@ -24,13 +24,14 @@ parameters.set_max_frequency(200)
 
 SIM_TIME = 0.35
 runtime_steps = int(SIM_TIME / parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
+# testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
+testing_frequencies = np.arange(20, 100, 0.25)
 
 # scene = ShoeboxRoomScene(parameters)
 # scene = BellBoxScene(parameters, has_wall=True)
-# scene = CuboidReferenceScene(parameters)
+scene = CuboidReferenceScene(parameters)
 # scene = ConcertHallScene(parameters)
-scene = OfficeScene(parameters)
+# scene = OfficeScene(parameters)
 grid = scene.build()
 
 # SLICE_HEIGHT = grid.scale(1.82)
@@ -112,10 +113,10 @@ ax_mean_spl.set_title("Average SPL in listener region")
 ax_mean_spl.set_xlabel("Frequency (hz)")
 ax_mean_spl.set_ylabel("Average SPL (dB)")
 
-for ax in recalc_axis:
-  ax.set_xscale('log', base=2)
-  ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
-  ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+# for ax in recalc_axis:
+#   ax.set_xscale('log', base=2)
+#   ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
+#   ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 
 fig.tight_layout()
