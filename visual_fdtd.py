@@ -118,6 +118,7 @@ last_an_maximum = 1e-32
 last_sim_maximum = 1e-32
 
 fig.tight_layout()
+      
 
 
 def animate(i) -> None:

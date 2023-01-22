@@ -6,6 +6,7 @@ from lib.grid import SimulationGrid
 from lib.impulse_generators import ImpulseGenerator
 from lib.parameters import SimulationParameters
 
+
 class Simulation:
   """Handles the simulation state and can perform a step"""
 
@@ -120,7 +121,7 @@ class Simulation:
                           prog.pressure_buffer, wait_for=kernel_wait),
           cl.enqueue_copy(queue, prog.pressure_buffer,
                           prog.pressure_next_buffer, wait_for=kernel_wait),
-      ]
+      ] if i < step_count - 1 else []
 
       # run analysis on previous values
       kernel_event2 = cl.enqueue_nd_range_kernel(

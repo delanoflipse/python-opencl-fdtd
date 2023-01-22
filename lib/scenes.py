@@ -1,7 +1,7 @@
 """
 Predefined grids besed on a number of scenarios
 """
-from lib.grid import LISTENER_FLAG, SOURCE_FLAG, SOURCE_REGION_FLAG, WALL_FLAG, SimulationGrid
+from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG, SimulationGrid
 from lib.materials import SimulatedMaterial
 from lib.parameters import SimulationParameters
 
