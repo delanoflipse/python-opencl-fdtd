@@ -272,6 +272,41 @@ class LShapedRoom(Scene):
     self.grid.fill_region(geometry_flag=LISTENER_FLAG)
 
 
+class LivingRoomScene(Scene):
+  def __init__(self, parameters: SimulationParameters) -> None:
+    super().__init__(parameters)
+    self.width = 4.3
+    self.height = 2.4  # ??
+    self.depth = 7.4
+    self.shape = (self.width, self.height, self.depth)
+
+  def mark_regions(self) -> None:
+    if self.grid is None:
+      return
+
+    run_frequency = self.grid.parameters.signal_frequency
+
+    # set edge beta values
+    self.grid.edge_betas.depth_max = painted_concrete_material.get_beta(
+        run_frequency)
+    self.grid.edge_betas.depth_min = painted_concrete_material.get_beta(
+        run_frequency)
+    self.grid.edge_betas.height_max = painted_concrete_material.get_beta(
+        run_frequency)
+    self.grid.edge_betas.height_min = laminate_material.get_beta(run_frequency)
+    self.grid.edge_betas.width_min = painted_concrete_material.get_beta(run_frequency)
+    self.grid.edge_betas.width_max = painted_concrete_material.get_beta(run_frequency)
+
+    # Chimney
+    self.grid.fill_region(
+        d_min=4.1,
+        d_max=5.2,
+        w_max=0.5,
+        geometry_flag=WALL_FLAG,
+        beta=painted_concrete_material.get_beta(run_frequency)
+    )
+
+
 class OfficeScene(Scene):
   def __init__(self, parameters: SimulationParameters) -> None:
     super().__init__(parameters)
@@ -406,7 +441,7 @@ class OfficeScene(Scene):
     )
     # after closet
     self.grid.fill_region(
-        d_min=2.2 - sub_size,
+        d_min=2.2 + sub_size,
         d_max=self.depth - 0.5 - sub_size,
         w_min=sub_size,
         w_max=0.45-sub_size,
