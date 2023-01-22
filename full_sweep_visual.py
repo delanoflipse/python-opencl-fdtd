@@ -16,14 +16,14 @@ from lib.impulse_generators import SimpleSinoidGenerator
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 from lib.simulation import Simulation
 
 # --- SELECT PARAMETERS ---
 SIMULATED_TIME = 0.3
 MAX_FREQUENCY = 200
-OVERSAMPLING = 16
-OCTAVE_BANDS = 12
+OVERSAMPLING = 24
+OCTAVE_BANDS = 36
 SPEAKERS = 1
 MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
 USE_REALTIME_VISUALS = True
@@ -43,11 +43,7 @@ testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
-scene = ShoeboxRoomScene(parameters)
-# scene = BellBoxScene(parameters, has_wall=True)
-# scene = CuboidReferenceScene(parameters)
-# scene = OfficeScene(parameters)
-# scene = ConcertHallScene(parameters)
+scene = ShoeboxReferenceScene(parameters)
 grid = scene.build()
 # -----
 
@@ -133,7 +129,7 @@ fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
 axes_shape = (2, 2)
 axis_deviation = plt.subplot2grid(axes_shape, (0, 0))
 axis_spl = plt.subplot2grid(axes_shape, (0, 1))
-axis_best_spl = plt.subplot2grid(axes_shape, (1, 1))
+axis_best_spl = plt.subplot2grid(axes_shape, (1, 0), colspan=2)
 
 axis_deviation.set_title("Standard deviation per sweep")
 axis_deviation.set_xlabel("Sweep Index")
@@ -164,6 +160,10 @@ timings = []
 
 min_dev = float("inf")
 max_dev = -float("inf")
+
+room_modes = scene.get_room_modes()
+for modal_frequency in room_modes:
+  axis_best_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
 
 
 def run_source_analysis_iteration(source_index: int) -> bool:

@@ -1,13 +1,13 @@
 
 from lib.simulation import Simulation
-from lib.scenes import Scene
+from lib.scene.scene import Scene
 from lib.scene.BedroomScene import BedroomScene
 from lib.scene.BellBoxScene import BellBoxScene
 from lib.scene.ConcertHallScene import ConcertHallScene
 from lib.scene.CuboidReferenceScene import CuboidReferenceScene
 from lib.scene.LShapedRoomScene import LShapedRoomScene
 from lib.scene.OfficeScene import OfficeScene
-from lib.scene.ShoeBoxReferenceScene import ShoeBoxReferenceScene
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 from lib.scene.StudioRoomScene import StudioRoomScene
 
 from lib.parameters import SimulationParameters
@@ -80,7 +80,7 @@ elif arguments.scene == "bellbox":
 elif arguments.scene == "concert":
   scene = ConcertHallScene(parameters)
 elif arguments.scene == "shoebox":
-  scene = ShoeBoxReferenceScene(parameters)
+  scene = ShoeboxReferenceScene(parameters)
 elif arguments.scene == "lshape":
   scene = LShapedRoomScene(parameters)
 elif arguments.scene == "cuboid":
@@ -175,7 +175,7 @@ fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
 axes_shape = (2, 2)
 axis_deviation = plt.subplot2grid(axes_shape, (0, 0))
 axis_spl = plt.subplot2grid(axes_shape, (0, 1))
-axis_best_spl = plt.subplot2grid(axes_shape, (1, 1))
+axis_best_spl = plt.subplot2grid(axes_shape, (0, 1), colspan=2)
 
 axis_deviation.set_title("Standard deviation per sweep")
 axis_deviation.set_xlabel("Sweep Index")
@@ -206,6 +206,10 @@ timings = []
 
 min_dev = float("inf")
 max_dev = -float("inf")
+
+room_modes = scene.get_room_modes()
+for modal_frequency in room_modes:
+  axis_best_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
 
 
 def run_source_analysis_iteration(source_index: int) -> bool:

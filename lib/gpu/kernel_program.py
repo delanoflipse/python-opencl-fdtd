@@ -21,22 +21,18 @@ class SimulationKernelProgram:
     self.parameters = params
 
     os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
-    print(f'debug: platforms')
     self.platforms = cl.get_platforms()
     for platform in cl.get_platforms():
       print(f'platform: {platform.name}')
       for device in platform.get_devices():
         print(f'- device: {device.name}')
 
-    print(f'debug: context.')
     self.ctx = cl.create_some_context(interactive=False)
 
-    print(f'debug: queue')
     self.queue = cl.CommandQueue(self.ctx)
     r_flag = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
     rw_flag = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
 
-    print(f'debug: buffers')
     self.analysis_buffer = cl.Buffer(self.ctx, rw_flag, hostbuf=grid.analysis)
     self.pressure_previous_buffer = cl.Buffer(
         self.ctx, r_flag, hostbuf=grid.pressure_previous)
@@ -51,16 +47,13 @@ class SimulationKernelProgram:
 
     file_directory = os.path.dirname(__file__)
     loc = os.path.join(file_directory, RELATIVE_PROGRAM_FILE)
-    print(f'debug: source {file_directory} {loc}')
     source = ""
     with open(loc, encoding="utf-8") as file:
       source = file.read()
 
-    print(f'debug: program')
     prg = cl.Program(self.ctx, source).build()
 
     # compact step kernel
-    print(f'debug: args')
     self.step_kernel = prg.compact_step
     self.step_kernel.set_arg(0, self.pressure_previous_buffer)
     self.step_kernel.set_arg(1, self.pressure_buffer)

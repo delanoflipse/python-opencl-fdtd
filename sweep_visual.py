@@ -121,17 +121,9 @@ for ax in recalc_axis:
   ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 # Room modes
-for i in range(4):
-  for j in range(4):
-    for k in range(4):
-      nw = i / scene.width
-      nh = j / scene.height
-      nd = k / scene.depth
-      s_part = nw * nw + nh * nh + nd * nd
-      f = (C_AIR / 2) * math.sqrt(s_part)
-      if f == 0.0:
-        continue
-      ax_mean_spl.axvline(f, linestyle='--', color='k')
+room_modes = scene.get_room_modes()
+for modal_frequency in room_modes:
+  ax_mean_spl.axvline(modal_frequency, linestyle='--', color='k')
 
 
 fig.tight_layout()

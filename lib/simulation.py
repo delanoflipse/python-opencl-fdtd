@@ -13,9 +13,7 @@ class Simulation:
   def __init__(self, parameters: SimulationParameters, grid: SimulationGrid):
     self.parameters = parameters
     self.grid = grid
-    print(f'debug: pre kernel')
     self.program = SimulationKernelProgram(grid)
-    print(f'debug: post kernel')
     self.generator: ImpulseGenerator = None
     self.time = 0
     self.iteration = 0

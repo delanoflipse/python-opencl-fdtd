@@ -1,4 +1,4 @@
-from lib.scene.ShoeBoxReferenceScene import ShoeBoxReferenceScene
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 from lib.simulation import Simulation
 from lib.parameters import SimulationParameters
 from lib.impulse_generators import GaussianModulatedImpulseGenerator
@@ -13,7 +13,7 @@ params.set_oversampling(16)
 params.set_max_frequency(200)
 
 # ---- SCENE ----
-scene = ShoeBoxReferenceScene(params)
+scene = ShoeboxReferenceScene(params)
 # ----
 
 grid = scene.build()
