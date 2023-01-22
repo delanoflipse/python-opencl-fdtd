@@ -1,17 +1,21 @@
 # OpenCL accelerated Acoustic Finite Difference Simulation
 
-## To install
+## Requirements
 
-```
-conda env create -f environment.yml
-```
+This repository was written for python version 3.9.x
 
-or manually add these packages:
+These packages are required:
 
 - numpy
 - numba
 - scipy
 - matplotlib
 - pyopencl
-- pocl
-- ocl-icd-system
+
+To install with pip, use:
+
+```bash
+pip install numpy numba scipy pyopencl matplotlib
+```
+
+## Run experiment

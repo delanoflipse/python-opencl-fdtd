@@ -1,5 +1,5 @@
+from lib.scene.ShoeBoxReferenceScene import ShoeBoxReferenceScene
 from lib.simulation import Simulation
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
 from lib.parameters import SimulationParameters
 from lib.impulse_generators import GaussianModulatedImpulseGenerator
 import numpy as np
@@ -11,9 +11,11 @@ step_count = 2 ** 3
 params = SimulationParameters()
 params.set_oversampling(16)
 params.set_max_frequency(200)
-# scene = ShoeboxRoomScene(params)
-# scene = BellBoxScene(params, has_wall=True)
-scene = ConcertHallScene(params)
+
+# ---- SCENE ----
+scene = ShoeBoxReferenceScene(params)
+# ----
+
 grid = scene.build()
 grid.select_source_locations([grid.source_set[0]])
 sim = Simulation(params, grid)

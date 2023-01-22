@@ -11,29 +11,27 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
-from lib.scene.ListeningRoomScene import ListeningRoomScene
+from lib.scene.StudioRoomScene import StudioRoomScene
 from lib.simulation import Simulation
 from lib.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-parameters.set_oversampling(24)
+parameters.set_oversampling(12)
 parameters.set_max_frequency(200)
 
 SIM_TIME = 0.3
 runtime_steps = int(SIM_TIME / parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
 
-# scene = ShoeboxRoomScene(parameters)
-# scene = BellBoxScene(parameters, has_wall=True)
-# scene = CuboidReferenceScene(parameters)
-# scene = ConcertHallScene(parameters)
-# scene = OfficeScene(parameters)
-scene = ListeningRoomScene(parameters)
+# ---- Scene ----
+scene = ShoeboxReferenceScene(parameters)
+# -----
+
 grid = scene.build()
 
 # SLICE_HEIGHT = grid.scale(1.82)
@@ -123,9 +121,9 @@ for ax in recalc_axis:
   ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 # Room modes
-for i in range(3):
-  for j in range(3):
-    for k in range(3):
+for i in range(4):
+  for j in range(4):
+    for k in range(4):
       nw = i / scene.width
       nh = j / scene.height
       nd = k / scene.depth

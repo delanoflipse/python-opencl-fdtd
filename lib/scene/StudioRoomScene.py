@@ -1,9 +1,10 @@
-from lib.scenes import Scene, wood_material, carpet_material, glass_material, laminate_material
+from lib.scene.scene import Scene
+from lib.materials import wood_material, carpet_material, glass_material, laminate_material
 from lib.parameters import SimulationParameters
 from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 
 
-class ListeningRoomScene(Scene):
+class StudioRoomScene(Scene):
   def __init__(self, parameters: SimulationParameters) -> None:
     super().__init__(parameters)
     self.width = 2.9
@@ -16,20 +17,11 @@ class ListeningRoomScene(Scene):
       return
     run_frequency = self.grid.parameters.signal_frequency
 
-    wood = 0.12
-    carpet = 0.12
-    laminate = 0.12
-
-    # wood = 0.01
-    # carpet = 0.01
-    # laminate = 0.01
-
     wood = wood_material.get_beta(run_frequency)
     carpet = carpet_material.get_beta(run_frequency)
-    glass = glass_material.get_beta(run_frequency)
+    # glass = glass_material.get_beta(run_frequency) # TODO
     laminate = laminate_material.get_beta(run_frequency)
     nopper = 0.5
-    # nopper = 0.01
 
     # set edge beta values
     self.grid.edge_betas.depth_max = carpet

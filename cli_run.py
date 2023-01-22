@@ -1,35 +1,64 @@
 
 from lib.simulation import Simulation
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
+from lib.scenes import Scene
+from lib.scene.BedroomScene import BedroomScene
+from lib.scene.BellBoxScene import BellBoxScene
+from lib.scene.ConcertHallScene import ConcertHallScene
+from lib.scene.CuboidReferenceScene import CuboidReferenceScene
+from lib.scene.LShapedRoomScene import LShapedRoomScene
+from lib.scene.OfficeScene import OfficeScene
+from lib.scene.ShoeBoxReferenceScene import ShoeBoxReferenceScene
+from lib.scene.StudioRoomScene import StudioRoomScene
+
 from lib.parameters import SimulationParameters
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.math.decibel_weightings import get_a_weighting
 from lib.impulse_generators import SimpleSinoidGenerator
 from lib.analysis.source_pairs import get_n_pairs_with_min_distance
 from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
-from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
+
 import csv
 import math
 import logging
 import os
 import sys
+import argparse
 from datetime import datetime
 from time import time
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 
+
+cli_argument_parser = argparse.ArgumentParser()
+cli_argument_parser.add_argument("-t", "--time", default=0.3, type=float)
+cli_argument_parser.add_argument(
+    "-o", "--oversampling", default=16, type=float)
+cli_argument_parser.add_argument("-f", "--frequency", default=200, type=float)
+cli_argument_parser.add_argument("-b", "--bands", default=12, type=float)
+cli_argument_parser.add_argument("-s", "--speakers", default=1, type=int)
+cli_argument_parser.add_argument("--distance", default=2.0, type=int)
+cli_argument_parser.add_argument("--scene", default="reference")
+cli_argument_parser.add_argument(
+    "--visuals", default=True, action=argparse.BooleanOptionalAction)
+cli_argument_parser.add_argument(
+    "--logs", default=True, action=argparse.BooleanOptionalAction)
+cli_argument_parser.add_argument(
+    "--csv", default=True, action=argparse.BooleanOptionalAction)
+
+arguments = cli_argument_parser.parse_args()
+
 # --- SELECT PARAMETERS ---
-SIMULATED_TIME = 0.3
-MAX_FREQUENCY = 200
-OVERSAMPLING = 24
-OCTAVE_BANDS = 24
-SPEAKERS = 1
-MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
-OUTPUT_VISUALS = True
-OUTPUT_FILE_LOGS = True
-OUTPUT_CSV = True
+SIMULATED_TIME = arguments.time
+MAX_FREQUENCY = arguments.frequency
+OVERSAMPLING = arguments.oversampling
+OCTAVE_BANDS = arguments.bands
+SPEAKERS = arguments.speakers
+MIN_DISTANCE_BETWEEN_SPEAKERS = arguments.distance
+OUTPUT_VISUALS = arguments.visuals
+OUTPUT_FILE_LOGS = arguments.logs
+OUTPUT_CSV = arguments.csv
 LOG_LEVEL = logging.DEBUG
 # -----
 
@@ -43,11 +72,24 @@ testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
-# scene = ShoeboxRoomScene(parameters)
-# scene = BellBoxScene(parameters, has_wall=True)
-# scene = CuboidReferenceScene(parameters)
-scene = OfficeScene(parameters)
-# scene = ConcertHallScene(parameters)
+scene: Scene = None
+if arguments.scene == "bedroom":
+  scene = BedroomScene(parameters)
+elif arguments.scene == "bellbox":
+  scene = BellBoxScene(parameters)
+elif arguments.scene == "concert":
+  scene = ConcertHallScene(parameters)
+elif arguments.scene == "shoebox":
+  scene = ShoeBoxReferenceScene(parameters)
+elif arguments.scene == "lshape":
+  scene = LShapedRoomScene(parameters)
+elif arguments.scene == "cuboid":
+  scene = CuboidReferenceScene(parameters)
+elif arguments.scene == "office":
+  scene = OfficeScene(parameters)
+elif arguments.scene == "stucio":
+  scene = StudioRoomScene(parameters)
+
 grid = scene.build()
 # -----
 
@@ -59,7 +101,6 @@ position_sets = get_n_pairs_with_min_distance(
 
 # ---- Logging ----
 file_dir = os.path.dirname(__file__)
-# file_dir = "/home/dflipse/python-opencl-fdtd"
 log = logging.getLogger("FDTD")
 log.setLevel(LOG_LEVEL)
 logFormatter = logging.Formatter(
