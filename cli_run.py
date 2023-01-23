@@ -30,16 +30,17 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 
+# TODO: combine with full sweep!
 
 cli_argument_parser = argparse.ArgumentParser()
+cli_argument_parser.add_argument("-s", "--scene", default="shoebox")
 cli_argument_parser.add_argument("-t", "--time", default=0.3, type=float)
 cli_argument_parser.add_argument(
     "-o", "--oversampling", default=16, type=float)
 cli_argument_parser.add_argument("-f", "--frequency", default=200, type=float)
 cli_argument_parser.add_argument("-b", "--bands", default=12, type=float)
-cli_argument_parser.add_argument("-s", "--speakers", default=1, type=int)
+cli_argument_parser.add_argument("-x", "--speakers", default=1, type=int)
 cli_argument_parser.add_argument("--distance", default=2.0, type=int)
-cli_argument_parser.add_argument("--scene", default="reference")
 cli_argument_parser.add_argument(
     "--visuals", default=True, action=argparse.BooleanOptionalAction)
 cli_argument_parser.add_argument(
@@ -87,7 +88,7 @@ elif arguments.scene == "cuboid":
   scene = CuboidReferenceScene(parameters)
 elif arguments.scene == "office":
   scene = OfficeScene(parameters)
-elif arguments.scene == "stucio":
+elif arguments.scene == "studio":
   scene = StudioRoomScene(parameters)
 
 grid = scene.build()
@@ -106,7 +107,7 @@ log.setLevel(LOG_LEVEL)
 logFormatter = logging.Formatter(
     "%(asctime)s [%(levelname)-5.5s] - %(message)s")
 
-output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {scene.__class__.__name__} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}x-{OCTAVE_BANDS}o-{SPEAKERS}s]'
+output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {scene.__class__.__name__} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}o-{OCTAVE_BANDS}b-{SPEAKERS}x]'
 
 if OUTPUT_FILE_LOGS:
   fileHandler = logging.FileHandler(
@@ -175,7 +176,7 @@ fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
 axes_shape = (2, 2)
 axis_deviation = plt.subplot2grid(axes_shape, (0, 0))
 axis_spl = plt.subplot2grid(axes_shape, (0, 1))
-axis_best_spl = plt.subplot2grid(axes_shape, (0, 1), colspan=2)
+axis_best_spl = plt.subplot2grid(axes_shape, (1, 0), colspan=2)
 
 axis_deviation.set_title("Standard deviation per sweep")
 axis_deviation.set_xlabel("Sweep Index")
@@ -191,12 +192,6 @@ for ax in [axis_best_spl, axis_spl]:
   ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 # ---- Analysis ----
-# per source
-sweep_sum = sim.grid.create_grid("float64")
-sweep_sum_sqr = sim.grid.create_grid("float64")
-sweep_deviation = sim.grid.create_grid("float64")
-sweep_ranking = sim.grid.create_grid("float64")
-
 deviation_plot, = axis_deviation.plot([], [], "-")
 best_spl_plot, worst_spl_plot = axis_best_spl.plot([], [], [], "-")
 max_spl_plot, = axis_best_spl.plot([], [], "--")
@@ -222,11 +217,6 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   frequencies_covered = []
   sources_covered.append(source_index)
 
-  sweep_sum.fill(0.0)
-  sweep_sum_sqr.fill(0.0)
-  sweep_deviation.fill(0.0)
-  sweep_ranking.fill(0.0)
-
   start = time()
   log.info(
       f'Picked source set {source_index + 1}/{len(position_sets)} with positions:')
@@ -239,12 +229,10 @@ def run_source_analysis_iteration(source_index: int) -> bool:
     frequencies_covered.append(frequency)
     sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
     scene.rebuild()
-    sim.sync_read_buffers()
     sim.reset()
+    sim.sync_read_buffers()
     # run single simulation
     sim.step(runtime_steps)
-    run_sweep_analysis(grid.analysis, sweep_sum, sweep_sum_sqr,
-                       sweep_deviation, sweep_ranking, analysis_key_index, index + 1)
     avg_spl, min_spl, max_spl = get_avg_spl(
         grid.analysis, grid.geometry, analysis_key_index)
     # a_weighting = get_a_weighting(frequency)
@@ -254,7 +242,8 @@ def run_source_analysis_iteration(source_index: int) -> bool:
     min_spl_values.append(min_spl)
     spl_values.append(a_spl)
     log.info(f'[{source_index}] {frequency:.2f}hz: {a_spl:.2f} SPL (dB)')
-  deviation = get_avg_dev(sweep_deviation, grid.geometry)
+  derrivative2 = np.diff(spl_values, n=1)
+  deviation = np.sum(np.power(derrivative2, 2))
   avg_spl = np.average(spl_values)
   deviations.append(deviation)
   spl_values_per_source.append(spl_values)
@@ -323,7 +312,13 @@ for i in range(len(position_sets)):
 
 end_time = time()
 diff = end_time - start_time
-log.info(f'Time elapsed for full sweep: {diff:.1f}s')
+
+d_hours = math.floor(diff / 60 / 60)
+d_minutes = math.floor((diff - d_hours * 60 * 60) / 60)
+d_seconds = diff - d_hours * 60 * 60 - d_minutes * 60
+
+log.info(
+    f'Time elapsed for full sweep: {d_hours:}h {d_minutes:.0f}m {d_seconds:.2f}s')
 
 if OUTPUT_VISUALS:
   for ax in [axis_best_spl, axis_deviation, axis_spl]:

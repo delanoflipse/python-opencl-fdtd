@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 from lib.parameters import SimulationParameters
-from lib.scenes import OfficeScene, ShoeboxRoomScene
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 
 if len(sys.argv) == 1:
   print('No file given. Usage: python parse_output.py <path/to/output.csv>')
@@ -37,7 +37,7 @@ parameters.set_oversampling(16)
 parameters.set_max_frequency(200)
 
 # scene = OfficeScene(parameters)
-scene = ShoeboxRoomScene(parameters)
+scene = ShoeboxReferenceScene(parameters)
 
 grid = scene.build()
 

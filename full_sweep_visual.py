@@ -60,7 +60,7 @@ log.setLevel(LOG_LEVEL)
 logFormatter = logging.Formatter(
     "%(asctime)s [%(levelname)-5.5s] - %(message)s")
 
-output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {scene.__class__.__name__} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}x-{OCTAVE_BANDS}o-{SPEAKERS}s]'
+output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {scene.__class__.__name__} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}o-{OCTAVE_BANDS}b-{SPEAKERS}x]'
 
 if OUTPUT_FILE_LOGS:
   fileHandler = logging.FileHandler(
@@ -290,7 +290,12 @@ for i in range(len(position_sets)):
 
 end_time = time()
 diff = end_time - start_time
-log.info(f'Time elapsed for full sweep: {diff:.1f}s')
+d_hours = math.floor(diff / 60 / 60)
+d_minutes = math.floor((diff - d_hours * 60 * 60) / 60)
+d_seconds = diff - d_hours * 60 * 60 - d_minutes * 60
+
+log.info(
+    f'Time elapsed for full sweep: {d_hours:}h {d_minutes:.0f}m {d_seconds:.2f}s')
 
 if OUTPUT_VISUALS:
   for ax in [axis_best_spl, axis_deviation, axis_spl]:
