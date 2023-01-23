@@ -21,8 +21,11 @@ from lib.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-parameters.set_oversampling(12)
+parameters.set_oversampling(16)
 parameters.set_max_frequency(200)
+# parameters.set_scheme(1 / math.sqrt(3), 0.0, 0.0)  # SLF
+parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
+# parameters.set_scheme(1 / math.sqrt(3), 0.2034, 0.0438)  # IDWM
 
 SIM_TIME = 0.3
 runtime_steps = int(SIM_TIME / parameters.dt)
@@ -123,7 +126,7 @@ for ax in recalc_axis:
 # Room modes
 room_modes = scene.get_room_modes()
 for modal_frequency in room_modes:
-  ax_mean_spl.axvline(modal_frequency, linestyle='--', color='k')
+  ax_mean_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
 
 
 fig.tight_layout()

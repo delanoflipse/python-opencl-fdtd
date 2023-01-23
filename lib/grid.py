@@ -180,9 +180,9 @@ class SimulationGrid:
   def build(self) -> None:
     """Once flags are set, build the geometry"""
     populate_neighbours(self.geometry, self.neighbours)
-    populate_inner_beta(self.geometry, self.beta, self.edge_betas)
-    self.source_count, self.listener_count = count_locations(self.geometry)
+    self.populate_inner_beta()
     self.source_set = get_source_locations(self.geometry)
+    self.source_count, self.listener_count = count_locations(self.geometry)
     self.is_build = True
 
   def select_source_locations(self, locations: List[Tuple[int, int, int]]) -> None:
@@ -191,9 +191,13 @@ class SimulationGrid:
       p_w, p_h, p_d = position
       self.geometry[p_w, p_h, p_d] |= SOURCE_FLAG
 
+  def populate_inner_beta(self) -> None:
+    populate_inner_betas(self.geometry, self.beta, self.edge_betas,
+                         self.parameters.arg_d1, self.parameters.arg_d2, self.parameters.arg_d3)
+
   def rebuild(self) -> None:
     """rebuild the geometry"""
-    populate_inner_beta(self.geometry, self.beta, self.edge_betas)
+    self.populate_inner_beta()
 
 
 @njit(parallel=True)
@@ -240,13 +244,13 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
-        neighour_flags = 0
-        w_min = w == 0
-        w_max = w == geometry.shape[0] - 1
-        h_min = h == 0
-        h_max = h == geometry.shape[1] - 1
-        d_min = d == 0
-        d_max = d == geometry.shape[1] - 1
+        neighour_flags: int = 0
+        w_min = w <= 0
+        w_max = w >= geometry.shape[0] - 1
+        h_min = h <= 0
+        h_max = h >= geometry.shape[1] - 1
+        d_min = d <= 0
+        d_max = d >= geometry.shape[2] - 1
 
         # w
         if not w_min and geometry[w - 1, h, d] & WALL_FLAG == 0:
@@ -323,76 +327,104 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
         if not w_min and not h_max and not d_max and geometry[w - 1, h + 1, d + 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_21
         # Whd
-        if not w_min and not h_min and not d_min and geometry[w + 1, h - 1, d - 1] & WALL_FLAG == 0:
+        if not w_max and not h_min and not d_min and geometry[w + 1, h - 1, d - 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_22
         # WhD
-        if not w_min and not h_min and not d_max and geometry[w + 1, h - 1, d + 1] & WALL_FLAG == 0:
+        if not w_max and not h_min and not d_max and geometry[w + 1, h - 1, d + 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_23
         # WHd
-        if not w_min and not h_max and not d_min and geometry[w + 1, h + 1, d - 1] & WALL_FLAG == 0:
+        if not w_max and not h_max and not d_min and geometry[w + 1, h + 1, d - 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_24
         # WHD
-        if not w_min and not h_max and not d_max and geometry[w + 1, h + 1, d + 1] & WALL_FLAG == 0:
+        if not w_max and not h_max and not d_max and geometry[w + 1, h + 1, d + 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_25
 
         neighbours[w, h, d] = neighour_flags
 
 
-@njit(parallel=True)
-def populate_inner_beta(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta) -> None:
+# @njit(parallel=True)
+def populate_inner_betas(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta, d1: float, d2: float, d3: float) -> None:
   """Set neighbour flags for geometry"""
+  points: list[tuple[int, int, int, float]] = [
+      # D1
+      (-1, 0, 0, d1),
+      (1, 0, 0, d1),
+      (0, -1, 0, d1),
+      (0, 1, 0, d1),
+      (0, 0, 1, d1),
+      (0, 0, -1, d1),
+      # D2
+      (-1, -1, 0, d2),
+      (-1, 1, 0, d2),
+      (1, 1, 0, d2),
+      (1, -1, 0, d2),
+      (0, -1, -1, d2),
+      (0, -1, 1, d2),
+      (0, 1, 1, d2),
+      (0, 1, -1, d2),
+      (-1, 0, -1, d2),
+      (-1, 0, 1, d2),
+      (1, 0, 1, d2),
+      (1, 0, -1, d2),
+      # D3
+      (-1, -1, -1, d3),
+      (-1, -1, 1, d3),
+      (-1, 1, -1, d3),
+      (-1, 1, 1, d3),
+      (1, -1, -1, d3),
+      (1, -1, 1, d3),
+      (1, 1, -1, d3),
+      (1, 1, 1, d3),
+  ]
+
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
         reflection_count = 0
         beta_average = 0
-        # w min
-        if w == 0:
-          beta_average += edge_betas.width_min
-          reflection_count += 1
-        elif geometry[w - 1, h, d] & WALL_FLAG > 0:
-          beta_average += beta[w - 1, h, d]
-          reflection_count += 1
+        for point in points:
+          (_w, _h, _d, fac) = point
+          pos_w = w + _w
+          pos_h = h + _h
+          pos_d = d + _d
+          abs_fac = abs(fac)
 
-        # w max
-        if w == geometry.shape[0] - 1:
-          beta_average += edge_betas.width_max
-          reflection_count += 1
-        elif geometry[w + 1, h, d] & WALL_FLAG > 0:
-          beta_average += beta[w + 1, h, d]
-          reflection_count += 1
+          if abs_fac == 0.0:
+            continue
 
-        # h min
-        if h == 0:
-          beta_average += edge_betas.height_min
-          reflection_count += 1
-        elif geometry[w, h - 1, d] & WALL_FLAG > 0:
-          beta_average += beta[w, h - 1, d]
-          reflection_count += 1
+          if pos_w <= 0:
+            beta_average += edge_betas.width_min * abs_fac
+            reflection_count += abs_fac
+            continue
 
-        # h max
-        if h == geometry.shape[1] - 1:
-          beta_average += edge_betas.height_max
-          reflection_count += 1
-        elif geometry[w, h + 1, d] & WALL_FLAG > 0:
-          beta_average += beta[w, h + 1, d]
-          reflection_count += 1
+          if pos_w >= geometry.shape[0] - 1:
+            beta_average += edge_betas.width_max * abs_fac
+            reflection_count += abs_fac
+            continue
 
-        # d min
-        if d == 0:
-          beta_average += edge_betas.depth_max
-          reflection_count += 1
-        elif geometry[w, h, d - 1] & WALL_FLAG > 0:
-          beta_average += beta[w, h, d - 1]
-          reflection_count += 1
+          if pos_h <= 0:
+            beta_average += edge_betas.height_min * abs_fac
+            reflection_count += abs_fac
+            continue
 
-        # d max
-        if d == geometry.shape[2] - 1:
-          beta_average += edge_betas.depth_min
-          reflection_count += 1
-        elif geometry[w, h, d + 1] & WALL_FLAG > 0:
-          beta_average += beta[w, h, d + 1]
-          reflection_count += 1
+          if pos_h >= geometry.shape[1] - 1:
+            beta_average += edge_betas.height_max * abs_fac
+            reflection_count += abs_fac
+            continue
+
+          if pos_d <= 0:
+            beta_average += edge_betas.depth_min * abs_fac
+            reflection_count += abs_fac
+            continue
+
+          if pos_d >= geometry.shape[2] - 1:
+            beta_average += edge_betas.depth_max * abs_fac
+            reflection_count += abs_fac
+            continue
+
+          if geometry[pos_w, pos_h, pos_d] & WALL_FLAG > 0:
+            beta_average += beta[pos_w, pos_h, pos_d] * abs_fac
+            reflection_count += abs_fac
 
         if reflection_count > 0:
-          beta[w, h, d] = beta_average / reflection_count
+          beta[_w, h, d] = beta_average / reflection_count

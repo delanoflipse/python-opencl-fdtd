@@ -68,6 +68,7 @@ LOG_LEVEL = logging.DEBUG
 parameters = SimulationParameters()
 parameters.set_oversampling(OVERSAMPLING)
 parameters.set_max_frequency(MAX_FREQUENCY)
+parameters.set_scheme(1.0, 1 / 4, 1 / 16)
 runtime_steps = int(SIMULATED_TIME / parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)

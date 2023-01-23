@@ -20,6 +20,6 @@ class ShoeboxReferenceScene(Scene):
 
     sub_pos = self.grid.pos(0.3, 0.15, 0.3)
     self.grid.geometry[sub_pos] |= SOURCE_REGION_FLAG
-
+    
     list_pos = self.grid.pos(self.width / 2, self.height / 2, self.depth / 2)
     self.grid.geometry[list_pos] |= LISTENER_FLAG

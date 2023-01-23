@@ -7,7 +7,6 @@ from lib.parameters import SimulationParameters
 from lib.physical_constants import C_AIR
 
 
-
 class Scene:
   def __init__(self, parameters: SimulationParameters) -> None:
     self.parameters = parameters
@@ -41,6 +40,8 @@ class Scene:
           s_part = nw * nw + nh * nh + nd * nd
           f = (C_AIR / 2) * math.sqrt(s_part)
           if f == 0.0:
+            continue
+          if f > 210:
             continue
           frequencies.append(f)
     return frequencies
