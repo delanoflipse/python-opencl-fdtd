@@ -4,6 +4,7 @@ from lib.parameters import SimulationParameters
 from lib.impulse_generators import GaussianModulatedImpulseGenerator
 import numpy as np
 import time
+import math
 
 iterations_per_step = 2 ** 12
 # count = 40000 // iterations_per_step
@@ -11,6 +12,8 @@ step_count = 2 ** 3
 params = SimulationParameters()
 params.set_oversampling(16)
 params.set_max_frequency(200)
+# params.set_scheme(1 / math.sqrt(3), 0.0, 0.0)
+params.set_scheme(1.0, 1 / 4, 1 / 16)
 
 # ---- SCENE ----
 scene = ShoeboxReferenceScene(params)

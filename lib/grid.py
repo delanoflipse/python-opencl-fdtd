@@ -14,6 +14,27 @@ BIT_2 = 1 << 2
 BIT_3 = 1 << 3
 BIT_4 = 1 << 4
 BIT_5 = 1 << 5
+BIT_6 = 1 << 6
+BIT_7 = 1 << 7
+BIT_8 = 1 << 8
+BIT_9 = 1 << 9
+BIT_10 = 1 << 10
+BIT_11 = 1 << 11
+BIT_12 = 1 << 12
+BIT_13 = 1 << 13
+BIT_14 = 1 << 14
+BIT_15 = 1 << 15
+BIT_16 = 1 << 16
+BIT_17 = 1 << 17
+BIT_18 = 1 << 18
+BIT_19 = 1 << 19
+BIT_20 = 1 << 20
+BIT_21 = 1 << 21
+BIT_22 = 1 << 22
+BIT_23 = 1 << 23
+BIT_24 = 1 << 24
+BIT_25 = 1 << 25
+BIT_26 = 1 << 26
 
 WALL_FLAG = BIT_0
 SOURCE_FLAG = BIT_1
@@ -73,8 +94,8 @@ class SimulationGrid:
 
     self.edge_betas = GridEdgeBeta()
 
-    self.geometry = self.create_grid("int8")
-    self.neighbours = self.create_grid("int8")
+    self.geometry = self.create_grid("uint8")
+    self.neighbours = self.create_grid("uint32")
 
     self.pressure = self.create_grid("float64")
     self.pressure_previous = self.create_grid("float64")
@@ -220,20 +241,99 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
     for h in prange(geometry.shape[1]):
       for d in prange(geometry.shape[2]):
         neighour_flags = 0
-        if w > 0 and geometry[w - 1, h, d] & WALL_FLAG == 0:
+        w_min = w == 0
+        w_max = w == geometry.shape[0] - 1
+        h_min = h == 0
+        h_max = h == geometry.shape[1] - 1
+        d_min = d == 0
+        d_max = d == geometry.shape[1] - 1
+
+        # w
+        if not w_min and geometry[w - 1, h, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_0
-        if w < geometry.shape[0] - 1 and geometry[w + 1, h, d] & WALL_FLAG == 0:
+        # W
+        if not w_max and geometry[w + 1, h, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_1
 
-        if h > 0 and geometry[w, h - 1, d] & WALL_FLAG == 0:
+        # h
+        if not h_min and geometry[w, h - 1, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_2
-        if h < geometry.shape[1] - 1 and geometry[w, h + 1, d] & WALL_FLAG == 0:
+        # H
+        if not h_max and geometry[w, h + 1, d] & WALL_FLAG == 0:
           neighour_flags |= BIT_3
 
-        if d > 0 and geometry[w, h, d - 1] & WALL_FLAG == 0:
+        # d
+        if not d_min and geometry[w, h, d - 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_4
-        if d < geometry.shape[2] - 1 and geometry[w, h, d + 1] & WALL_FLAG == 0:
+        # D
+        if not d_max and geometry[w, h, d + 1] & WALL_FLAG == 0:
           neighour_flags |= BIT_5
+
+        # --- 2 ---
+        # wh
+        if not w_min and not h_min and geometry[w - 1, h - 1, d] & WALL_FLAG == 0:
+          neighour_flags |= BIT_6
+        # wH
+        if not w_min and not h_max and geometry[w - 1, h + 1, d] & WALL_FLAG == 0:
+          neighour_flags |= BIT_7
+        # WH
+        if not w_max and not h_max and geometry[w + 1, h + 1, d] & WALL_FLAG == 0:
+          neighour_flags |= BIT_8
+        # Wh
+        if not w_max and not h_min and geometry[w + 1, h - 1, d] & WALL_FLAG == 0:
+          neighour_flags |= BIT_9
+
+        # dh
+        if not d_min and not h_min and geometry[w, h - 1, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_10
+        # dH
+        if not d_min and not h_max and geometry[w, h + 1, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_11
+        # DH
+        if not d_max and not h_max and geometry[w, h + 1, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_12
+        # Dh
+        if not d_max and not h_min and geometry[w, h - 1, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_13
+
+        # wd
+        if not w_min and not d_min and geometry[w - 1, h, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_14
+        # wD
+        if not w_min and not d_max and geometry[w - 1, h, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_15
+        # WD
+        if not w_max and not d_max and geometry[w + 1, h, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_16
+        # Wd
+        if not w_max and not d_min and geometry[w + 1, h, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_17
+
+        # --- 3 ---
+        # whd
+        if not w_min and not h_min and not d_min and geometry[w - 1, h - 1, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_18
+        # whD
+        if not w_min and not h_min and not d_max and geometry[w - 1, h - 1, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_19
+        # wHd
+        if not w_min and not h_max and not d_min and geometry[w - 1, h + 1, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_20
+        # wHD
+        if not w_min and not h_max and not d_max and geometry[w - 1, h + 1, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_21
+        # Whd
+        if not w_min and not h_min and not d_min and geometry[w + 1, h - 1, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_22
+        # WhD
+        if not w_min and not h_min and not d_max and geometry[w + 1, h - 1, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_23
+        # WHd
+        if not w_min and not h_max and not d_min and geometry[w + 1, h + 1, d - 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_24
+        # WHD
+        if not w_min and not h_max and not d_max and geometry[w + 1, h + 1, d + 1] & WALL_FLAG == 0:
+          neighour_flags |= BIT_25
 
         neighbours[w, h, d] = neighour_flags
 

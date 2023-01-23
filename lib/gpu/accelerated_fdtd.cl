@@ -20,7 +20,7 @@ __kernel void compact_step(__global double *previous_pressure,
                            __global double *pressure,
                            __global double *pressure_next,
                            __global double *betas, __global char *geometry,
-                           __global char *neighbours, uint size_w, uint size_h,
+                           __global uint *neighbours, uint size_w, uint size_h,
                            uint size_d, double lambda, double signal) {
   size_t i = get_global_id(0);
   size_t w = (i / (size_h * size_d)) % size_w;
@@ -101,6 +101,117 @@ __kernel void compact_step(__global double *previous_pressure,
 
   if (n_d_min)
     stencil_sum += pressure[i - d_stride];
+
+  double next_value =
+      beta_1_factor * (neighbour_factor * current + lambda2 * stencil_sum -
+                       beta_2_factor * previous);
+  if (is_source && !isnan(signal)) {
+    if (USE_HYBRID_HARD_SOURCE) {
+      next_value = signal;
+    } else {
+      next_value += signal;
+    }
+  }
+
+  pressure_next[i] = next_value;
+}
+
+int numberOfSetBits(uint i)
+{
+     i = i - ((i >> 1) & 0x55555555);        // add pairs of bits
+     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);  // quads
+     i = (i + (i >> 4)) & 0x0F0F0F0F;        // groups of 8
+     return (i * 0x01010101) >> 24;          // horizontal sum of bytes
+}
+
+__kernel void compact_schema_step(__global double *previous_pressure,
+                           __global double *pressure,
+                           __global double *pressure_next,
+                           __global double *betas, __global char *geometry,
+                           __global uint *neighbours, uint size_w, uint size_h,
+                           uint size_d, double lambda, double d1, double d2, double d3, double d4, double signal) {
+  size_t i = get_global_id(0);
+  size_t w = (i / (size_h * size_d)) % size_w;
+  size_t h = (i / (size_d)) % size_h;
+  size_t d = i % size_d;
+
+  size_t d_stride = 1;
+  size_t h_stride = size_d;
+  size_t w_stride = size_d * size_h;
+  size_t size = size_d * size_h * size_w;
+  char geometry_type = geometry[i];
+
+  bool is_wall = geometry_type & 1;
+  bool is_source = geometry_type >> 1 & 1;
+
+  uint neighbour_flag = neighbours[i];
+
+  if (i >= size || i < 0) {
+    return;
+  }
+
+  if (is_wall) {
+    pressure_next[i] = NAN;
+    // pressure_next[i] = 0.001;
+    return;
+  }
+
+  if (neighbour_flag == 0) {
+    pressure_next[i] = 0.0;
+    return;
+  }
+
+  double lambda2 = lambda * lambda;
+  char neighbour_count = numberOfSetBits(neighbour_flag);
+  double neighbour_factor = 2.0 - (double)(neighbour_count) * lambda2;
+
+  double current = pressure[i];
+  double previous = previous_pressure[i];
+  double d1_sum = 0.0;
+  double d2_sum = 0.0;
+  double d3_sum = 0.0;
+  double d4_sum = 0.0;
+
+  double beta_1_factor = 1.0;
+  double beta_2_factor = 1.0;
+
+  if (neighbour_count < 6) {
+    double beta = betas[i];
+    beta_1_factor = 1.0 / (1.0 + lambda * beta);
+    beta_2_factor = 1.0 - lambda * beta;
+  }
+
+  // D1 - 1x neighbours
+  if (neighbour_flag >> 0 & 1) d1_sum += pressure[i - w_stride];
+  if (neighbour_flag >> 1 & 1) d1_sum += pressure[i + w_stride];
+  if (neighbour_flag >> 2 & 1) d1_sum += pressure[i - h_stride];
+  if (neighbour_flag >> 3 & 1) d1_sum += pressure[i + h_stride];
+  if (neighbour_flag >> 4 & 1) d1_sum += pressure[i - d_stride];
+  if (neighbour_flag >> 5 & 1) d1_sum += pressure[i + d_stride];
+
+  // D2 - 2x neighbours
+  if (neighbour_flag >> 6 & 1) d2_sum += pressure[i - w_stride - h_stride];
+  if (neighbour_flag >> 7 & 1) d2_sum += pressure[i - w_stride + h_stride];
+  if (neighbour_flag >> 8 & 1) d2_sum += pressure[i + w_stride + h_stride];
+  if (neighbour_flag >> 9 & 1) d2_sum += pressure[i + w_stride - h_stride];
+  if (neighbour_flag >> 10 & 1) d2_sum += pressure[i - d_stride - h_stride];
+  if (neighbour_flag >> 11 & 1) d2_sum += pressure[i - d_stride + h_stride];
+  if (neighbour_flag >> 12 & 1) d2_sum += pressure[i + d_stride + h_stride];
+  if (neighbour_flag >> 13 & 1) d2_sum += pressure[i + d_stride - h_stride];
+  if (neighbour_flag >> 14 & 1) d2_sum += pressure[i - w_stride - d_stride];
+  if (neighbour_flag >> 15 & 1) d2_sum += pressure[i - w_stride + d_stride];
+  if (neighbour_flag >> 16 & 1) d2_sum += pressure[i + w_stride + d_stride];
+  if (neighbour_flag >> 17 & 1) d2_sum += pressure[i + w_stride - d_stride];
+
+  // D3 - 3x neighbours
+  if (neighbour_flag >> 18 & 1) d3_sum += pressure[i - w_stride - h_stride - d_stride];
+  if (neighbour_flag >> 19 & 1) d3_sum += pressure[i - w_stride - h_stride + d_stride];
+  if (neighbour_flag >> 20 & 1) d3_sum += pressure[i - w_stride + h_stride - d_stride];
+  if (neighbour_flag >> 21 & 1) d3_sum += pressure[i - w_stride + h_stride + d_stride];
+  if (neighbour_flag >> 22 & 1) d3_sum += pressure[i + w_stride - h_stride - d_stride];
+  if (neighbour_flag >> 23 & 1) d3_sum += pressure[i + w_stride - h_stride + d_stride];
+  if (neighbour_flag >> 24 & 1) d3_sum += pressure[i + w_stride + h_stride - d_stride];
+  if (neighbour_flag >> 25 & 1) d3_sum += pressure[i + w_stride + h_stride + d_stride];
 
   double next_value =
       beta_1_factor * (neighbour_factor * current + lambda2 * stencil_sum -
