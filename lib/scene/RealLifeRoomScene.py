@@ -1,5 +1,5 @@
 from lib.scene.scene import Scene
-from lib.materials import wood_material, carpet_material, double_glass_material, laminate_material, suspended_ceiling_material, hard_wall_material, cushion_material
+from lib.materials import wood_material, carpet_material, double_glass_material, metal_material, suspended_ceiling_material, hard_wall_material, cushion_material
 from lib.parameters import SimulationParameters
 from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 
@@ -24,6 +24,7 @@ class RealLifeRoomScene(Scene):
     wood = wood_material.get_beta(run_frequency)
     hard_wall = hard_wall_material.get_beta(run_frequency)
     cushion = cushion_material.get_beta(run_frequency)
+    metal = metal_material.get_beta(run_frequency)
     tv_screen = 0.1
     whiteboard = 0.1
 
@@ -40,12 +41,23 @@ class RealLifeRoomScene(Scene):
     self.grid.fill_region(
         d_min=1.05,
         d_max=1.05 + 1.24,
-        w_min=0.03,
+        w_min=0.07,
         w_max=0.11,
         h_min=1.09,
         h_max=1.09 + 0.71,
         geometry_flag=WALL_FLAG,
         beta=tv_screen,
+    )
+    # Radiator
+    self.grid.fill_region(
+        d_min=self.depth - 0.77,
+        d_max=self.depth - 0.2,
+        w_min=0.03,
+        w_max=0.10,
+        h_min=0.15,
+        h_max=0.15 + 0.7,
+        geometry_flag=WALL_FLAG,
+        beta=metal,
     )
     # whiteboards
     self.grid.fill_region(
@@ -84,7 +96,7 @@ class RealLifeRoomScene(Scene):
         geometry_flag=WALL_FLAG,
         beta=cushion,
     )
-    
+
     # couch, sitting area
     self.grid.fill_region(
         d_min=0.1,
@@ -96,7 +108,7 @@ class RealLifeRoomScene(Scene):
         geometry_flag=WALL_FLAG,
         beta=cushion,
     )
-    
+
     # couch, back rest
     self.grid.fill_region(
         d_min=0.1,
@@ -108,7 +120,7 @@ class RealLifeRoomScene(Scene):
         geometry_flag=WALL_FLAG,
         beta=cushion,
     )
-    
+
     # couch, extra cushion
     self.grid.fill_region(
         d_min=0.1,
@@ -120,12 +132,12 @@ class RealLifeRoomScene(Scene):
         geometry_flag=WALL_FLAG,
         beta=cushion,
     )
-    
+
     #  ---- SUB LOCATIONS -----
     sub_size = 0.4
     sub_offset = sub_size / 2
     sub_max_from_wall = 0.5
-    
+
     # Between couch wall
     self.grid.fill_region(
         d_min=sub_offset,
@@ -136,7 +148,7 @@ class RealLifeRoomScene(Scene):
         w_max=1.06-sub_size,
         geometry_flag=SOURCE_REGION_FLAG,
     )
-    
+
     # Under TV, left
     self.grid.fill_region(
         d_min=sub_offset,
@@ -147,7 +159,7 @@ class RealLifeRoomScene(Scene):
         w_max=sub_max_from_wall,
         geometry_flag=SOURCE_REGION_FLAG,
     )
-    
+
     # outer wall, left
     self.grid.fill_region(
         d_min=self.depth - sub_max_from_wall,
@@ -158,7 +170,7 @@ class RealLifeRoomScene(Scene):
         w_max=1.4-sub_size,
         geometry_flag=SOURCE_REGION_FLAG,
     )
-    
+
     # outer wall, right
     self.grid.fill_region(
         d_min=self.depth - sub_max_from_wall,
@@ -169,7 +181,7 @@ class RealLifeRoomScene(Scene):
         w_max=self.width - sub_offset,
         geometry_flag=SOURCE_REGION_FLAG,
     )
-    
+
     # below whiteboard
     self.grid.fill_region(
         d_min=self.depth - 1.7 + sub_offset,
@@ -182,5 +194,34 @@ class RealLifeRoomScene(Scene):
     )
 
     #  ---- LISTENER LOCATIONS -----
-    list_pos = self.grid.pos(self.width / 2, self.height / 2, self.depth / 2)
-    self.grid.geometry[list_pos] |= LISTENER_FLAG
+    # Poof 2
+    self.grid.fill_region(
+        d_min=self.depth - 0.46,
+        h_min=1.0,
+        h_max=1.4,
+        w_min=1.4,
+        w_max=1.4 + 0.46,
+        geometry_flag=LISTENER_FLAG,
+    )
+
+    # couch, sitting area
+    self.grid.fill_region(
+        h_min=1.0,
+        h_max=1.4,
+        d_min=0.1,
+        d_max=0.1 + 0.85,
+        w_min=1.06,
+        w_max=1.06 + 2.35,
+        geometry_flag=LISTENER_FLAG,
+    )
+
+    # Standing
+    self.grid.fill_region(
+        h_min=1.6,
+        h_max=2.0,
+        d_min=1.0,
+        d_max=self.depth - 0.8,
+        w_min=0.8,
+        w_max=self.width - 0.8,
+        geometry_flag=LISTENER_FLAG,
+    )

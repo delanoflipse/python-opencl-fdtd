@@ -2,18 +2,18 @@
 from lib.charts.voxel_chart import VoxelChart
 from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 from lib.parameters import SimulationParameters
-from lib.scenes import ConcertHallScene, CuboidReferenceScene, LShapedRoom, LivingRoomScene, OfficeScene, ShoeboxRoomScene
+from lib.scene.RealLifeRoomScene import RealLifeRoomScene
 import os
 import matplotlib
 import matplotlib.pyplot as plt
 
 # scene grid
 parameters = SimulationParameters()
-parameters.set_oversampling(16)
+parameters.set_oversampling(32)
 parameters.set_max_frequency(200)
 
 # scene = OfficeScene(parameters)
-scene = LivingRoomScene(parameters)
+scene = RealLifeRoomScene(parameters)
 # scene = ShoeboxRoomScene(parameters)
 # scene = LShapedRoom(parameters)
 # scene = CuboidReferenceScene(parameters)
