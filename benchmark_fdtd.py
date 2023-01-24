@@ -1,10 +1,9 @@
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from lib.simulation import Simulation
+from lib.parameters import SimulationParameters
+from lib.impulse_generators import GaussianModulatedImpulseGenerator
 import numpy as np
 import time
-
-from lib.impulse_generators import GaussianModulatedImpulseGenerator
-from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene
-from lib.simulation import Simulation
 
 iterations_per_step = 2 ** 12
 # count = 40000 // iterations_per_step
@@ -13,13 +12,15 @@ params = SimulationParameters()
 params.set_oversampling(16)
 params.set_max_frequency(200)
 
-# scene = ShoeboxRoomScene(params)
-# scene = BellBoxScene(params, has_wall=True)
-scene = ConcertHallScene(params)
+# ---- SCENE ----
+scene = ShoeboxReferenceScene(params)
+# ----
+
 grid = scene.build()
 grid.select_source_locations([grid.source_set[0]])
 sim = Simulation(params, grid)
 sim.generator = GaussianModulatedImpulseGenerator(params.max_frequency)
+
 sim.print_statistics()
 
 iteration_count = iterations_per_step * step_count

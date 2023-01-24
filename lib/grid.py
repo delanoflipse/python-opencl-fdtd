@@ -151,6 +151,10 @@ class SimulationGrid:
       return sys.maxsize
     return int(round(size / self.parameters.dx))
 
+  def pos(self, w: float, h: float, d: float) -> tuple[int, int, int]:
+    """Get grid position for real measurement"""
+    return (self.scale(w), self.scale(h), self.scale(d))
+
   def build(self) -> None:
     """Once flags are set, build the geometry"""
     populate_neighbours(self.geometry, self.neighbours)

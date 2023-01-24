@@ -11,26 +11,27 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
-from lib.scenes import ShoeboxRoomScene, BellBoxScene, ConcertHallScene, CuboidReferenceScene, OfficeScene
+from lib.scene.StudioRoomScene import StudioRoomScene
 from lib.simulation import Simulation
+from lib.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-# parameters.set_oversampling(12)
+parameters.set_oversampling(12)
 parameters.set_max_frequency(200)
 
-SIM_TIME = 0.35
+SIM_TIME = 0.3
 runtime_steps = int(SIM_TIME / parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
 
-# scene = ShoeboxRoomScene(parameters)
-# scene = BellBoxScene(parameters, has_wall=True)
-# scene = CuboidReferenceScene(parameters)
-# scene = ConcertHallScene(parameters)
-scene = OfficeScene(parameters)
+# ---- Scene ----
+scene = ShoeboxReferenceScene(parameters)
+# -----
+
 grid = scene.build()
 
 # SLICE_HEIGHT = grid.scale(1.82)
@@ -38,7 +39,9 @@ SLICE_HEIGHT = grid.scale(scene.height / 2)
 # SLICE_HEIGHT = grid.scale(.97)
 # SLICE_HEIGHT = grid.scale(.97) + 1
 
+sub_location = grid.pos(0.3, 0.3, 3.5)
 grid.select_source_locations([grid.source_set[0]])
+# grid.select_source_locations([sub_location])
 
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
@@ -50,7 +53,7 @@ file_dir = os.path.dirname(__file__)
 plt.style.use(os.path.join(file_dir, './styles/poster.mplstyle'))
 
 # create subplot axis
-axes_shape = (4, 3)
+axes_shape = (5, 3)
 fig = plt.gcf()
 fig.set_dpi(150)
 fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
@@ -58,9 +61,9 @@ ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
 ax_pres = plt.subplot2grid(axes_shape, (0, 1), rowspan=3)
 ax_analysis = plt.subplot2grid(axes_shape, (0, 2), rowspan=3)
 
-ax_max_an = plt.subplot2grid(axes_shape, (3, 0))
-ax_max_pres = plt.subplot2grid(axes_shape, (3, 1))
-ax_mean_spl = plt.subplot2grid(axes_shape, (3, 2))
+ax_max_an = plt.subplot2grid(axes_shape, (3, 0), colspan=2)
+ax_max_pres = plt.subplot2grid(axes_shape, (3, 2))
+ax_mean_spl = plt.subplot2grid(axes_shape, (4, 0), colspan=3)
 
 # datasets
 recalc_axis = [ax_max_an, ax_max_pres, ax_mean_spl]
@@ -116,6 +119,11 @@ for ax in recalc_axis:
   ax.set_xscale('log', base=2)
   ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
   ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+
+# Room modes
+room_modes = scene.get_room_modes()
+for modal_frequency in room_modes:
+  ax_mean_spl.axvline(modal_frequency, linestyle='--', color='k')
 
 
 fig.tight_layout()

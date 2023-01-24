@@ -1,35 +1,65 @@
 
+from lib.simulation import Simulation
+from lib.scene.scene import Scene
+from lib.scene.BedroomScene import BedroomScene
+from lib.scene.BellBoxScene import BellBoxScene
+from lib.scene.ConcertHallScene import ConcertHallScene
+from lib.scene.CuboidReferenceScene import CuboidReferenceScene
+from lib.scene.LShapedRoomScene import LShapedRoomScene
+from lib.scene.OfficeScene import OfficeScene
+from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from lib.scene.StudioRoomScene import StudioRoomScene
+
+from lib.parameters import SimulationParameters
+from lib.math.octaves import get_octaval_center_frequencies
+from lib.math.decibel_weightings import get_a_weighting
+from lib.impulse_generators import SimpleSinoidGenerator
+from lib.analysis.source_pairs import get_n_pairs_with_min_distance
+from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
+import matplotlib.pyplot as plt
+
 import csv
 import math
 import logging
 import os
 import sys
+import argparse
 from datetime import datetime
 from time import time
 import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
-from lib.analysis.source_pairs import get_n_pairs_with_min_distance
-from lib.impulse_generators import SimpleSinoidGenerator
-from lib.math.decibel_weightings import get_a_weighting
-from lib.math.octaves import get_octaval_center_frequencies
-from lib.parameters import SimulationParameters
-from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
-from lib.simulation import Simulation
+matplotlib.use('Agg')
+
+# TODO: combine with full sweep!
+
+cli_argument_parser = argparse.ArgumentParser()
+cli_argument_parser.add_argument("-s", "--scene", default="shoebox")
+cli_argument_parser.add_argument("-t", "--time", default=0.3, type=float)
+cli_argument_parser.add_argument(
+    "-o", "--oversampling", default=16, type=float)
+cli_argument_parser.add_argument("-f", "--frequency", default=200, type=float)
+cli_argument_parser.add_argument("-b", "--bands", default=12, type=float)
+cli_argument_parser.add_argument("-x", "--speakers", default=1, type=int)
+cli_argument_parser.add_argument("--distance", default=2.0, type=int)
+cli_argument_parser.add_argument(
+    "--visuals", default=True, action=argparse.BooleanOptionalAction)
+cli_argument_parser.add_argument(
+    "--logs", default=True, action=argparse.BooleanOptionalAction)
+cli_argument_parser.add_argument(
+    "--csv", default=True, action=argparse.BooleanOptionalAction)
+
+arguments = cli_argument_parser.parse_args()
 
 # --- SELECT PARAMETERS ---
-SIMULATED_TIME = 0.3
-MAX_FREQUENCY = 200
-OVERSAMPLING = 24
-OCTAVE_BANDS = 36
-SPEAKERS = 1
-MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
-USE_REALTIME_VISUALS = True
-OUTPUT_VISUALS = True
-OUTPUT_FILE_LOGS = True
-OUTPUT_CSV = True
+SIMULATED_TIME = arguments.time
+MAX_FREQUENCY = arguments.frequency
+OVERSAMPLING = arguments.oversampling
+OCTAVE_BANDS = arguments.bands
+SPEAKERS = arguments.speakers
+MIN_DISTANCE_BETWEEN_SPEAKERS = arguments.distance
+OUTPUT_VISUALS = arguments.visuals
+OUTPUT_FILE_LOGS = arguments.logs
+OUTPUT_CSV = arguments.csv
 LOG_LEVEL = logging.DEBUG
 # -----
 
@@ -43,7 +73,24 @@ testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
-scene = ShoeboxReferenceScene(parameters)
+scene: Scene = None
+if arguments.scene == "bedroom":
+  scene = BedroomScene(parameters)
+elif arguments.scene == "bellbox":
+  scene = BellBoxScene(parameters)
+elif arguments.scene == "concert":
+  scene = ConcertHallScene(parameters)
+elif arguments.scene == "shoebox":
+  scene = ShoeboxReferenceScene(parameters)
+elif arguments.scene == "lshape":
+  scene = LShapedRoomScene(parameters)
+elif arguments.scene == "cuboid":
+  scene = CuboidReferenceScene(parameters)
+elif arguments.scene == "office":
+  scene = OfficeScene(parameters)
+elif arguments.scene == "studio":
+  scene = StudioRoomScene(parameters)
+
 grid = scene.build()
 # -----
 
@@ -145,12 +192,6 @@ for ax in [axis_best_spl, axis_spl]:
   ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 # ---- Analysis ----
-# per source
-sweep_sum = sim.grid.create_grid("float64")
-sweep_sum_sqr = sim.grid.create_grid("float64")
-sweep_deviation = sim.grid.create_grid("float64")
-sweep_ranking = sim.grid.create_grid("float64")
-
 deviation_plot, = axis_deviation.plot([], [], "-")
 best_spl_plot, worst_spl_plot = axis_best_spl.plot([], [], [], "-")
 max_spl_plot, = axis_best_spl.plot([], [], "--")
@@ -176,11 +217,6 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   frequencies_covered = []
   sources_covered.append(source_index)
 
-  sweep_sum.fill(0.0)
-  sweep_sum_sqr.fill(0.0)
-  sweep_deviation.fill(0.0)
-  sweep_ranking.fill(0.0)
-
   start = time()
   log.info(
       f'Picked source set {source_index + 1}/{len(position_sets)} with positions:')
@@ -193,12 +229,10 @@ def run_source_analysis_iteration(source_index: int) -> bool:
     frequencies_covered.append(frequency)
     sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
     scene.rebuild()
-    sim.sync_read_buffers()
     sim.reset()
+    sim.sync_read_buffers()
     # run single simulation
     sim.step(runtime_steps)
-    run_sweep_analysis(grid.analysis, sweep_sum, sweep_sum_sqr,
-                       sweep_deviation, sweep_ranking, analysis_key_index, index + 1)
     avg_spl, min_spl, max_spl = get_avg_spl(
         grid.analysis, grid.geometry, analysis_key_index)
     # a_weighting = get_a_weighting(frequency)
@@ -208,7 +242,8 @@ def run_source_analysis_iteration(source_index: int) -> bool:
     min_spl_values.append(min_spl)
     spl_values.append(a_spl)
     log.info(f'[{source_index}] {frequency:.2f}hz: {a_spl:.2f} SPL (dB)')
-  deviation = get_avg_dev(sweep_deviation, grid.geometry)
+  derrivative2 = np.diff(spl_values, n=1)
+  deviation = np.sum(np.power(derrivative2, 2))
   avg_spl = np.average(spl_values)
   deviations.append(deviation)
   spl_values_per_source.append(spl_values)
@@ -270,26 +305,14 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   return False
 
 
-if USE_REALTIME_VISUALS:
-  plt.show(block=False)
-  # wm = plt.get_current_fig_manager()
-  # wm.full_screen_toggle()
-  # wm.resize(1920, 1080)
 start_time = time()
 for i in range(len(position_sets)):
   run_source_analysis_iteration(i)
   deviation_plot.set_data(sources_covered, deviations)
 
-  if USE_REALTIME_VISUALS:
-    for ax in [axis_best_spl, axis_deviation, axis_spl]:
-      ax.relim()
-      ax.autoscale_view()
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    plt.tight_layout()
-
 end_time = time()
 diff = end_time - start_time
+
 d_hours = math.floor(diff / 60 / 60)
 d_minutes = math.floor((diff - d_hours * 60 * 60) / 60)
 d_seconds = diff - d_hours * 60 * 60 - d_minutes * 60
@@ -303,8 +326,6 @@ if OUTPUT_VISUALS:
     ax.autoscale_view()
   plt.tight_layout()
   plt.savefig(os.path.join(file_dir, "output", f'{output_uid}.png'), dpi=300)
-if USE_REALTIME_VISUALS:
-  plt.show(block=True)
 
 if OUTPUT_CSV:
   csv_file.close()

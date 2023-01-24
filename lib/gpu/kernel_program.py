@@ -13,6 +13,12 @@ RELATIVE_PROGRAM_FILE = "accelerated_fdtd.cl"
 class SimulationKernelProgram:
   """Loads and setup gpu accelerated code"""
 
+  def print_devices_and_platforms(self) -> None:
+    for platform in cl.get_platforms():
+      print(f'platform: {platform.name}')
+      for device in platform.get_devices():
+        print(f'- device: {device.name}')
+
   def __init__(self, grid: SimulationGrid):
     if not grid.is_build:
       raise Exception("Please build the grid before building the program")
@@ -22,6 +28,7 @@ class SimulationKernelProgram:
 
     os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
     self.platforms = cl.get_platforms()
+
     self.ctx = cl.create_some_context(interactive=False)
 
     self.queue = cl.CommandQueue(self.ctx)
