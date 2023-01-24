@@ -92,14 +92,21 @@ __kernel void compact_schema_step(__global double *previous_pressure,
                            __global double *betas, __global char *geometry,
                            __global uint *neighbours, uint size_w, uint size_h,
                            uint size_d, double lambda, double pa, double pb, double d1, double d2, double d3, double d4, double signal) {
+  
+  size_t d_stride = 1;
+  size_t h_stride = size_d;
+  size_t w_stride = size_d * size_h;
+  
+  // size_t w = get_global_id(0);
+  // size_t h = get_global_id(1);
+  // size_t d = get_global_id(2);
+  // size_t i = w * w_stride + h * h_stride + d * d_stride;
+
   size_t i = get_global_id(0);
   size_t w = (i / (size_h * size_d)) % size_w;
   size_t h = (i / (size_d)) % size_h;
   size_t d = i % size_d;
-
-  size_t d_stride = 1;
-  size_t h_stride = size_d;
-  size_t w_stride = size_d * size_h;
+  
   size_t size = size_d * size_h * size_w;
   char geometry_type = geometry[i];
 
@@ -126,9 +133,11 @@ __kernel void compact_schema_step(__global double *previous_pressure,
   uint k_neighbour_1 = popcount(neighbour_flag & K1_BITMASK);
   uint k_neighbour_2 = popcount(neighbour_flag & K2_BITMASK);
   uint k_neighbour_3 = popcount(neighbour_flag & K3_BITMASK);
-  bool has_wall_neighbours = neighbour_flag != K_FULL;
+  bool has_k1_neighbours = d1 == 0.0 || k_neighbour_1 == 6;
+  bool has_k2_neighbours = d2 == 0.0 || k_neighbour_2 == 12;
+  bool has_k3_neighbours = d3 == 0.0 || k_neighbour_3 == 8;
+  bool has_wall_neighbours = !has_k1_neighbours || !has_k2_neighbours || !has_k3_neighbours;
 
-  // TODO:
   double neighbour_factor = d4;
   double beta_1_factor = 1.0;
   double beta_2_factor = 1.0;
@@ -136,12 +145,14 @@ __kernel void compact_schema_step(__global double *previous_pressure,
 
   if (has_wall_neighbours) {
     neighbour_factor = 2 -(double)(k_neighbour_1) * lambda2
-      + (double)(k_neighbour_2) * pa * lambda2
-      - (double)(k_neighbour_3) * pb * lambda2;
+      + 8.0 * pa * lambda2
+      - 12.0 * pb * lambda2;
+      // + (double)(k_neighbour_2) * pa * lambda2
+      // - (double)(k_neighbour_3) * pb * lambda2;
     
-    double beta = betas[i];
-    beta_1_factor = 1.0 / (1.0 + lambda * beta);
-    beta_2_factor = 1.0 - lambda * beta;
+    // double beta = betas[i];
+    // beta_1_factor = 1.0 / (1.0 + lambda * beta);
+    // beta_2_factor = 1.0 - lambda * beta;
   }
 
   double current = pressure[i];
@@ -212,7 +223,6 @@ __kernel void compact_schema_step(__global double *previous_pressure,
   double stencil_sum = d1 * d1_sum + d2 * d2_sum + d3 * d3_sum;
   double current_sum = neighbour_factor * current;
   double next_value = beta_1_factor * (stencil_sum + current_sum - beta_2_factor * previous);
-  // double next_value = d1_sum;
 
   if (is_source && !isnan(signal)) {
     if (USE_HYBRID_HARD_SOURCE) {

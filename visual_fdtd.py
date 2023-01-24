@@ -9,7 +9,7 @@ from lib.parameters import SimulationParameters
 from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 from lib.simulation import Simulation
 
-ITERATIONS_PER_STEP: int = 10
+ITERATIONS_PER_STEP: int = 1
 
 # get and set style
 file_dir = os.path.dirname(__file__)
@@ -34,9 +34,10 @@ ax_an_db = plt.subplot2grid(axes_shape, (2, 3))
 recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec, ax_an_db]
 
 parameters = SimulationParameters()
-parameters.set_oversampling(24)
+# parameters.set_oversampling(16)
 parameters.set_max_frequency(200)
-parameters.set_signal_frequency(62.0)
+parameters.set_signal_frequency(400.0)
+# parameters.set_signal_frequency(62.0)
 parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
 # parameters.set_scheme(1.0, 1 / 4, 0.0)  # CCP
 # parameters.set_scheme(1.0, 1.0 / 2.0, 1.0 / 4.0)  # OCTO
@@ -45,7 +46,8 @@ parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
 scene = ShoeboxReferenceScene(parameters)
 
 grid = scene.build()
-grid.select_source_locations([grid.source_set[0]])
+# grid.select_source_locations([grid.source_set[0]])
+grid.select_source_locations([grid.pos(2.0, scene.height / 2, 2.0)])
 # grid.select_source_locations([grid.pos(0.0, scene.height / 2, 0.0)])
 
 # SLICE_HEIGHT = grid.scale(1.32)
@@ -58,15 +60,15 @@ SLICE_HEIGHT = grid.scale(scene.height / 2)
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
 
-# sim.generator = GaussianMonopulseGenerator(params.signal_frequency)
-# sim.generator = GaussianModulatedImpulseGenerator(params.signal_frequency)
+sim.generator = GaussianMonopulseGenerator(parameters.signal_frequency)
+# sim.generator = GaussianModulatedImpulseGenerator(parameters.signal_frequency)
 
 # hann_window = HannWindow(
 #     width=2 / parameters.signal_frequency)
 # sim.generator = WindowModulatedSinoidImpulse(
 #     parameters.signal_frequency, hann_window)
 # sim.generator = DiracImpulseGenerator()
-sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
+# sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
 
 scene.rebuild()
 sim.sync_read_buffers()
@@ -80,12 +82,14 @@ max_db_data = []
 temp_slice = np.ndarray(shape=(grid.width_parts, grid.depth_parts))
 cmap = plt.cm.seismic.copy()
 cmap.set_bad('black', 1.0)
+cmap_spl = plt.cm.OrRd.copy()
+cmap_spl.set_bad('black', 1.0)
 pressure_image = ax_sim.imshow(temp_slice, cmap=cmap)
 color_bar_pressure = plt.colorbar(pressure_image, ax=ax_sim)
 
-analysis_image = ax_analysis.imshow(temp_slice, cmap=cmap)
+analysis_image = ax_analysis.imshow(temp_slice, cmap=cmap_spl)
 color_bar_analysis = plt.colorbar(analysis_image, ax=ax_analysis)
-analysis_image_2 = ax_analysis_2.imshow(temp_slice, cmap=cmap)
+analysis_image_2 = ax_analysis_2.imshow(temp_slice, cmap=cmap_spl)
 color_bar_analysis_2 = plt.colorbar(analysis_image, ax=ax_analysis_2)
 
 value_plot, = ax_val.plot([], [], "-")
@@ -123,8 +127,8 @@ fig.tight_layout()
 
 def animate(i) -> None:
   global last_sim_maximum, last_an_maximum
-  # if sim.time > 0.005:
-  #   return
+  if sim.time > 0.01:
+    return
   sim.step(ITERATIONS_PER_STEP)
 
   x_data.append(sim.time)

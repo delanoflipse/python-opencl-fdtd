@@ -29,8 +29,8 @@ class SimulationParameters:
                       (1.0 - 4.0 * self.param_a + 4.0 * self.param_b))
     self.arg_d2 = eps(self.lambda_2 * (self.param_a - 2.0 * self.param_b))
     self.arg_d3 = eps(self.lambda_2 * self.param_b)
-    self.arg_d4 = eps(2.0 * (1.0 - 3.0 * self.lambda_2 + 6.0 * self.lambda_2 *
-                             self.param_a - 4.0 * self.param_b * self.lambda_2))
+    self.arg_d4 = eps(2.0 - 6.0 * self.lambda_2 + 12.0 * self.lambda_2 *
+                      self.param_a - 8.0 * self.param_b * self.lambda_2)
 
     self.sampling_frequency = self.max_frequency * self.oversampling
     self.min_wavelength = C_AIR / self.sampling_frequency

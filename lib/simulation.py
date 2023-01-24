@@ -79,6 +79,7 @@ class Simulation:
     grid = self.grid
     queue = self.program.queue
     kernel_global_size = [self.grid.pressure.size]
+    kernel_global_shape = self.grid.pressure.shape
     # kernel_global_size_shaped = self.grid.pressure.shape
     args = {
         "is_blocking": False,
