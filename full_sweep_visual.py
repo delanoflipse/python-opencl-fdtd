@@ -162,7 +162,9 @@ min_dev = float("inf")
 max_dev = -float("inf")
 
 room_modes = scene.get_room_modes()
-for modal_frequency in room_modes:
+for (modal_frequency, axis_type) in room_modes:
+  if modal_frequency > testing_frequencies[-1]:
+    continue
   axis_best_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
 
 
