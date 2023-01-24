@@ -3,7 +3,7 @@
 #define D1_SIZE 6
 #define D2_SIZE 12
 #define D3_SIZE 8
-#define USE_HYBRID_HARD_SOURCE false
+#define USE_HYBRID_HARD_SOURCE true
 // #define ALPHA_TIMING 0.05
 #define ALPHA_TIMING 0.01
 
