@@ -7,6 +7,8 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 
+from typing import List
+
 import numpy as np
 from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 from lib.parameters import SimulationParameters
@@ -111,7 +113,7 @@ for ax in [axis_floor_map, axis_site_map, axis_value_map]:
   ax.set_xlabel("Width index")
   ax.set_zlabel("Height index")
 
-frequencies: list[float] = []
+frequencies: List[float] = []
 max_per_frequency = []
 sum_per_frequency = []
 min_per_frequency = []
