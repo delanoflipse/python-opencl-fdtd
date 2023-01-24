@@ -43,11 +43,10 @@ cli_argument_parser.add_argument("-b", "--bands", default=24, type=float)
 cli_argument_parser.add_argument("-x", "--speakers", default=1, type=int)
 cli_argument_parser.add_argument("--distance", default=2.0, type=int)
 cli_argument_parser.add_argument(
-    "--visuals", default=True, action=argparse.BooleanOptionalAction)
+    "--novisuals", default=True, action="store_false")
 cli_argument_parser.add_argument(
-    "--logs", default=True, action=argparse.BooleanOptionalAction)
-cli_argument_parser.add_argument(
-    "--csv", default=True, action=argparse.BooleanOptionalAction)
+    "--nologs", default=True, action="store_false")
+cli_argument_parser.add_argument("--nocsv", default=True, action="store_false")
 
 arguments = cli_argument_parser.parse_args()
 
@@ -58,9 +57,9 @@ OVERSAMPLING = arguments.oversampling
 OCTAVE_BANDS = arguments.bands
 SPEAKERS = arguments.speakers
 MIN_DISTANCE_BETWEEN_SPEAKERS = arguments.distance
-OUTPUT_VISUALS = arguments.visuals
-OUTPUT_FILE_LOGS = arguments.logs
-OUTPUT_CSV = arguments.csv
+OUTPUT_VISUALS = not arguments.novisuals
+OUTPUT_FILE_LOGS = not arguments.nologs
+OUTPUT_CSV = not arguments.nocsv
 LOG_LEVEL = logging.DEBUG
 # -----
 
