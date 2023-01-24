@@ -47,6 +47,7 @@ class Scene:
           f = (C_AIR / 2) * math.sqrt(s_part)
           if f == 0.0:
             continue
+          frequencies.append((f, axis_type))
     return frequencies
 
   def mark_regions(self) -> None:

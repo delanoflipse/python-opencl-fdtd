@@ -31,12 +31,7 @@ class RealLifeRoomScene(Scene):
 
     # set edge beta values
     if self.reference_values:
-      self.grid.edge_betas.depth_min = 0.5
-      self.grid.edge_betas.depth_max = 0.5
-      self.grid.edge_betas.width_min = 0.5
-      self.grid.edge_betas.width_max = 0.5
-      self.grid.edge_betas.height_max = 0.5
-      self.grid.edge_betas.height_min = 0.5
+      self.grid.edge_betas.set_all(0.1)
     else:
       self.grid.edge_betas.height_max = suspended_ceiling
       self.grid.edge_betas.height_min = carpet
