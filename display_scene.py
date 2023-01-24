@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 
 # scene grid
 parameters = SimulationParameters()
-parameters.set_oversampling(32)
+parameters.set_oversampling(24)
 parameters.set_max_frequency(200)
 
 # scene = OfficeScene(parameters)
-scene = RealLifeRoomScene(parameters)
+scene = RealLifeRoomScene(parameters, True)
 # scene = ShoeboxRoomScene(parameters)
 # scene = LShapedRoom(parameters)
 # scene = CuboidReferenceScene(parameters)

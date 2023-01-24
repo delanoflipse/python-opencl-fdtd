@@ -13,6 +13,7 @@ from lib.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
 from lib.charts.line_chart import LineChart
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from lib.scene.RealLifeRoomScene import RealLifeRoomScene
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
@@ -22,7 +23,7 @@ from lib.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-parameters.set_oversampling(12)
+parameters.set_oversampling(24)
 parameters.set_max_frequency(200)
 
 SIM_TIME = 0.3
@@ -30,7 +31,8 @@ runtime_steps = int(SIM_TIME / parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
 
 # ---- Scene ----
-scene = ShoeboxReferenceScene(parameters)
+# scene = ShoeboxReferenceScene(parameters)
+scene = RealLifeRoomScene(parameters, True)
 # -----
 
 grid = scene.build()
@@ -64,7 +66,7 @@ ax_analysis = plt.subplot2grid(axes_shape, (0, 2), rowspan=3)
 
 axis_maximum_spl = plt.subplot2grid(axes_shape, (3, 0))
 axis_maximum_pressure = plt.subplot2grid(axes_shape, (3, 1))
-axis_mean_spl = plt.subplot2grid(axes_shape, (3, 2))
+axis_mean_spl = plt.subplot2grid(axes_shape, (4, 0), colspan=3)
 
 
 # datasets
@@ -123,8 +125,10 @@ color_bar_3.set_label("Relative Pressure(Pa)")
 
 # Room modes
 room_modes = scene.get_room_modes()
-for modal_frequency in room_modes:
-  axis_mean_spl.axvline(modal_frequency, linestyle='--', color='k')
+for (modal_frequency, axis_type) in room_modes:
+  if modal_frequency > testing_frequencies[-1]:
+    continue
+  axis_mean_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
 
 
 fig.tight_layout()
