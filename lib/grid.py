@@ -1,7 +1,6 @@
 import math
 import sys
 import numpy as np
-from typing import Tuple, List
 
 from numba import njit, prange, float64
 from numba.experimental import jitclass
@@ -82,7 +81,7 @@ class GridEdgeBeta:
 class SimulationGrid:
   """All data related to the grid of the simulation"""
 
-  def __init__(self, shape: Tuple[float, float, float], parameters: SimulationParameters):
+  def __init__(self, shape: tuple[float, float, float], parameters: SimulationParameters):
     (width, height, depth) = shape
     self.parameters = parameters
     self.real_shape = shape
@@ -119,7 +118,7 @@ class SimulationGrid:
     float64_buffers = 5 + self.analysis_values
     int8_buffers = 2
     self.storage_estimate = self.grid_size * (float64_buffers*8 + int8_buffers)
-    self.source_set: list[Tuple[int, int, int]] = []
+    self.source_set: list[tuple[int, int, int]] = []
     self.source_count = -1
     self.listener_count = -1
     self.is_build = False
@@ -173,7 +172,7 @@ class SimulationGrid:
       return sys.maxsize
     return int(round(size / self.parameters.dx))
 
-  def pos(self, w: float, h: float, d: float) -> Tuple[int, int, int]:
+  def pos(self, w: float, h: float, d: float) -> tuple[int, int, int]:
     """Get grid position for real measurement"""
     return (self.scale(w), self.scale(h), self.scale(d))
 
@@ -185,7 +184,7 @@ class SimulationGrid:
     self.source_count, self.listener_count = count_locations(self.geometry)
     self.is_build = True
 
-  def select_source_locations(self, locations: List[Tuple[int, int, int]]) -> None:
+  def select_source_locations(self, locations: list[tuple[int, int, int]]) -> None:
     unset_source_flag(self.geometry)
     for position in locations:
       p_w, p_h, p_d = position
@@ -211,9 +210,9 @@ def unset_source_flag(geometry: np.ndarray) -> None:
   return
 
 
-def get_source_locations(geometry: np.ndarray) -> List[Tuple[int, int, int]]:
+def get_source_locations(geometry: np.ndarray) -> list[tuple[int, int, int]]:
   """Count the number of cells that have the SOURCE_REGION_FLAG set"""
-  source_set: list[Tuple[int, int, int]] = []
+  source_set: list[tuple[int, int, int]] = []
 
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
@@ -224,7 +223,7 @@ def get_source_locations(geometry: np.ndarray) -> List[Tuple[int, int, int]]:
 
 
 @njit(parallel=True)
-def count_locations(geometry: np.ndarray) -> Tuple[int, int]:
+def count_locations(geometry: np.ndarray) -> tuple[int, int]:
   """Count the number of cells that have the SOURCE_REGION_FLAG set"""
   count_src = 0
   count_lis = 0
