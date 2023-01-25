@@ -43,10 +43,10 @@ cli_argument_parser.add_argument("-b", "--bands", default=24, type=float)
 cli_argument_parser.add_argument("-x", "--speakers", default=1, type=int)
 cli_argument_parser.add_argument("--distance", default=2.0, type=int)
 cli_argument_parser.add_argument(
-    "--novisuals", default=True, action="store_false")
+    "--novisuals", default=False, action="store_true")
 cli_argument_parser.add_argument(
-    "--nologs", default=True, action="store_false")
-cli_argument_parser.add_argument("--nocsv", default=True, action="store_false")
+    "--nologs", default=False, action="store_true")
+cli_argument_parser.add_argument("--nocsv", default=False, action="store_true")
 
 arguments = cli_argument_parser.parse_args()
 
@@ -63,6 +63,7 @@ OUTPUT_CSV = not arguments.nocsv
 LOG_LEVEL = logging.DEBUG
 # -----
 
+print(arguments)
 
 # ---- Simulation ----
 parameters = SimulationParameters()
