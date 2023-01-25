@@ -147,7 +147,8 @@ class Simulation:
           cl.enqueue_nd_range_kernel(
               queue,
               prog.scheme_step_kernel,
-              kernel_global_size,
+              # kernel_global_size,
+              kernel_global_shape,
               None,
               wait_for=wait_event
           ),

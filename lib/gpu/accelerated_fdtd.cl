@@ -1,6 +1,7 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
 #define USE_HYBRID_HARD_SOURCE true
+#define USE_3D_GLOBAL_SIZE = true
 // #define ALPHA_TIMING 0.05
 #define ALPHA_TIMING 0.01
 
@@ -100,22 +101,30 @@ compact_schema_step(__global double *previous_pressure,
                     __global uint *neighbours, uint size_w, uint size_h,
                     uint size_d, double lambda, double pa, double pb, double d1,
                     double d2, double d3, double d4, double signal) {
+  size_t local_x = get_local_id(1);
+#ifdef USE_3D_GLOBAL_SIZE
+  size_t w = get_global_id(0);
+  size_t h = get_global_id(1);
+  size_t d = get_global_id(2);
 
+  size_t d_stride = 1;
+  size_t h_stride = get_global_size(2);
+  size_t w_stride = get_global_size(1) * get_global_size(2);
+
+  size_t i = w * w_stride + h * h_stride + d * d_stride;
+  size_t size = get_global_size(0) * get_global_size(1) * get_global_size(2);
+#else
   size_t d_stride = 1;
   size_t h_stride = size_d;
   size_t w_stride = size_d * size_h;
-
-  // size_t w = get_global_id(0);
-  // size_t h = get_global_id(1);
-  // size_t d = get_global_id(2);
-  // size_t i = w * w_stride + h * h_stride + d * d_stride;
 
   size_t i = get_global_id(0);
   size_t w = (i / (size_h * size_d)) % size_w;
   size_t h = (i / (size_d)) % size_h;
   size_t d = i % size_d;
-
   size_t size = size_d * size_h * size_w;
+#endif
+
   char geometry_type = geometry[i];
 
   bool is_wall = geometry_type & 1;
@@ -158,9 +167,9 @@ compact_schema_step(__global double *previous_pressure,
     // + (double)(k_neighbour_2) * pa * lambda2
     // - (double)(k_neighbour_3) * pb * lambda2;
 
-    // double beta = betas[i];
-    // beta_1_factor = 1.0 / (1.0 + lambda * beta);
-    // beta_2_factor = 1.0 - lambda * beta;
+    double beta = betas[i];
+    beta_1_factor = 1.0 / (1.0 + lambda * beta);
+    beta_2_factor = 1.0 - lambda * beta;
   }
 
   double current = pressure[i];
@@ -263,14 +272,14 @@ compact_schema_step(__global double *previous_pressure,
       beta_1_factor * (stencil_sum + current_sum - beta_2_factor * previous);
 
   if (is_source && !isnan(signal)) {
-    if (USE_HYBRID_HARD_SOURCE) {
-      next_value = signal;
-    } else {
-      next_value += signal;
-    }
+#ifdef USE_HYBRID_HARD_SOURCE
+    next_value = signal;
+#else
+    next_value += signal;
+#endif
   }
 
-  pressure_next[i] = next_value;
+  pressure_next[i] = local_x;
 }
 
 __kernel void analysis_step(__global double *pressure,
