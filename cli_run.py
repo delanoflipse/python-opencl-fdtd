@@ -301,7 +301,7 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   diff = end - start
   timings.append(diff)
   avg_timing = np.average(timings)
-  indexes_left = len(position_sets) - source_index
+  indexes_left = len(position_sets) - source_index - 1
   time_left = indexes_left * avg_timing
   hours = math.floor(time_left / 60 / 60)
   minutes = math.floor((time_left - hours * 60 * 60) / 60)

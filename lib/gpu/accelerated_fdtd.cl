@@ -141,6 +141,7 @@ compact_schema_step(__global double *previous_pressure,
   uint k_neighbour_1 = popcount(neighbour_flag & K1_BITMASK);
   uint k_neighbour_2 = popcount(neighbour_flag & K2_BITMASK);
   uint k_neighbour_3 = popcount(neighbour_flag & K3_BITMASK);
+  uint total_neighbours = popcount(neighbour_flag);
   bool has_k1_neighbours = d1 == 0.0 || k_neighbour_1 == 6;
   bool has_k2_neighbours = d2 == 0.0 || k_neighbour_2 == 12;
   bool has_k3_neighbours = d3 == 0.0 || k_neighbour_3 == 8;
@@ -153,14 +154,15 @@ compact_schema_step(__global double *previous_pressure,
   double lambda2 = lambda * lambda;
 
   if (has_wall_neighbours) {
-    neighbour_factor = 2 - (double)(k_neighbour_1)*lambda2 +
-                       8.0 * pa * lambda2 - 12.0 * pb * lambda2;
-    // + (double)(k_neighbour_2) * pa * lambda2
-    // - (double)(k_neighbour_3) * pb * lambda2;
+    double k1 = (double)(k_neighbour_1);
+    double k2 = (double)(k_neighbour_2);
+    double k3 = (double)(k_neighbour_3);
+    neighbour_factor = 2 - k1 * d1 - k2 * d2 - k3 * d3;
 
-    // double beta = betas[i];
-    // beta_1_factor = 1.0 / (1.0 + lambda * beta);
-    // beta_2_factor = 1.0 - lambda * beta;
+    double beta = betas[i];
+    double beta_k = (26 - (double)(total_neighbours)) * lambda * beta * 0.5;
+    beta_2_factor = 1.0 - beta_k;
+    beta_1_factor = 1.0 / (1 + beta_k);
   }
 
   double current = pressure[i];

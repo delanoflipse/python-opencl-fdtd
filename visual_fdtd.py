@@ -38,7 +38,7 @@ parameters = SimulationParameters()
 parameters.set_max_frequency(400)
 parameters.set_signal_frequency(400.0)
 # parameters.set_signal_frequency(62.0)
-# parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
+parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
 # parameters.set_scheme(1.0, 1 / 4, 0.0)  # CCP
 # parameters.set_scheme(1.0, 1.0 / 2.0, 1.0 / 4.0)  # OCTO
 # parameters.set_scheme(1 / math.sqrt(3), 0.2034, 0.0438)  # IDWM
