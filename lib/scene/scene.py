@@ -6,6 +6,8 @@ from lib.grid import SimulationGrid
 from lib.parameters import SimulationParameters
 from lib.physical_constants import C_AIR
 
+from typing import Tuple, List
+
 
 class Scene:
   def __init__(self, parameters: SimulationParameters) -> None:
@@ -29,7 +31,7 @@ class Scene:
     self.grid.rebuild()
     return None
 
-  def get_room_modes(self) -> list[tuple[float, int]]:
+  def get_room_modes(self) -> List[Tuple[float, int]]:
     frequencies = []
     for i in range(4):
       i_active = 1 if i > 0 else 0
@@ -46,8 +48,6 @@ class Scene:
           s_part = nw * nw + nh * nh + nd * nd
           f = (C_AIR / 2) * math.sqrt(s_part)
           if f == 0.0:
-            continue
-          if f > 200.0:
             continue
           frequencies.append((f, axis_type))
     return frequencies

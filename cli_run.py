@@ -9,6 +9,7 @@ from lib.scene.LShapedRoomScene import LShapedRoomScene
 from lib.scene.OfficeScene import OfficeScene
 from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
 from lib.scene.StudioRoomScene import StudioRoomScene
+from lib.scene.RealLifeRoomScene import RealLifeRoomScene
 
 from lib.parameters import SimulationParameters
 from lib.math.octaves import get_octaval_center_frequencies
@@ -38,15 +39,14 @@ cli_argument_parser.add_argument("-t", "--time", default=0.3, type=float)
 cli_argument_parser.add_argument(
     "-o", "--oversampling", default=16, type=float)
 cli_argument_parser.add_argument("-f", "--frequency", default=200, type=float)
-cli_argument_parser.add_argument("-b", "--bands", default=12, type=float)
+cli_argument_parser.add_argument("-b", "--bands", default=24, type=float)
 cli_argument_parser.add_argument("-x", "--speakers", default=1, type=int)
 cli_argument_parser.add_argument("--distance", default=2.0, type=int)
 cli_argument_parser.add_argument(
-    "--visuals", default=True, action=argparse.BooleanOptionalAction)
+    "--novisuals", default=False, action="store_true")
 cli_argument_parser.add_argument(
-    "--logs", default=True, action=argparse.BooleanOptionalAction)
-cli_argument_parser.add_argument(
-    "--csv", default=True, action=argparse.BooleanOptionalAction)
+    "--nologs", default=False, action="store_true")
+cli_argument_parser.add_argument("--nocsv", default=False, action="store_true")
 
 arguments = cli_argument_parser.parse_args()
 
@@ -57,23 +57,30 @@ OVERSAMPLING = arguments.oversampling
 OCTAVE_BANDS = arguments.bands
 SPEAKERS = arguments.speakers
 MIN_DISTANCE_BETWEEN_SPEAKERS = arguments.distance
-OUTPUT_VISUALS = arguments.visuals
-OUTPUT_FILE_LOGS = arguments.logs
-OUTPUT_CSV = arguments.csv
+OUTPUT_VISUALS = not arguments.novisuals
+OUTPUT_FILE_LOGS = not arguments.nologs
+OUTPUT_CSV = not arguments.nocsv
 LOG_LEVEL = logging.DEBUG
 # -----
 
+print(arguments)
 
 # ---- Simulation ----
 parameters = SimulationParameters()
 parameters.set_oversampling(OVERSAMPLING)
 parameters.set_max_frequency(MAX_FREQUENCY)
+# parameters.set_scheme(1.0, 1 / 4, 1 / 16)
+
 runtime_steps = int(SIMULATED_TIME / parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
 scene: Scene = None
+if arguments.scene == "real-reference":
+  scene = RealLifeRoomScene(parameters, True)
+if arguments.scene == "real-scene":
+  scene = RealLifeRoomScene(parameters)
 if arguments.scene == "bedroom":
   scene = BedroomScene(parameters)
 elif arguments.scene == "bellbox":
@@ -294,7 +301,7 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   diff = end - start
   timings.append(diff)
   avg_timing = np.average(timings)
-  indexes_left = len(position_sets) - source_index
+  indexes_left = len(position_sets) - source_index - 1
   time_left = indexes_left * avg_timing
   hours = math.floor(time_left / 60 / 60)
   minutes = math.floor((time_left - hours * 60 * 60) / 60)

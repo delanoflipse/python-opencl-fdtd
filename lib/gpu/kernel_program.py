@@ -71,6 +71,28 @@ class SimulationKernelProgram:
     self.step_kernel.set_arg(9, np.float64(params.lambda_courant))
     self.step_kernel.set_arg(10, np.float64(0))
 
+    self.scheme_step_kernel = prg.compact_schema_step
+    self.scheme_step_kernel.set_arg(0, self.pressure_previous_buffer)
+    self.scheme_step_kernel.set_arg(1, self.pressure_buffer)
+    self.scheme_step_kernel.set_arg(2, self.pressure_next_buffer)
+    self.scheme_step_kernel.set_arg(3, self.beta_buffer)
+    self.scheme_step_kernel.set_arg(4, self.geometry_buffer)
+    self.scheme_step_kernel.set_arg(5, self.neighbours_buffer)
+
+    self.scheme_step_kernel.set_arg(6, np.uint32(grid.width_parts))
+    self.scheme_step_kernel.set_arg(7, np.uint32(grid.height_parts))
+    self.scheme_step_kernel.set_arg(8, np.uint32(grid.depth_parts))
+
+    self.scheme_step_kernel.set_arg(9, np.float64(params.lambda_courant))
+    self.scheme_step_kernel.set_arg(10, np.float64(params.param_a))
+    self.scheme_step_kernel.set_arg(11, np.float64(params.param_b))
+    self.scheme_step_kernel.set_arg(12, np.float64(params.arg_d1))
+    self.scheme_step_kernel.set_arg(13, np.float64(params.arg_d2))
+    self.scheme_step_kernel.set_arg(14, np.float64(params.arg_d3))
+    self.scheme_step_kernel.set_arg(15, np.float64(params.arg_d4))
+
+    self.scheme_step_kernel.set_arg(16, np.float64(0))
+
     # analysis step kernel
     self.analysis_kernel = prg.analysis_step
 

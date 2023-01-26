@@ -23,12 +23,15 @@ from lib.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-parameters.set_oversampling(24)
+parameters.set_oversampling(16)
 parameters.set_max_frequency(200)
+# parameters.set_scheme(1 / math.sqrt(3), 0.0, 0.0)  # SLF
+# parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
+# parameters.set_scheme(1 / math.sqrt(3), 0.2034, 0.0438)  # IDWM
 
 SIM_TIME = 0.3
 runtime_steps = int(SIM_TIME / parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=24)
+testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=96)
 
 # ---- Scene ----
 # scene = ShoeboxReferenceScene(parameters)
@@ -152,7 +155,7 @@ def animate(i) -> None:
   parameters.set_signal_frequency(f)
   frequency_list.append(f)
   # a_weighting = get_a_weighting(f)
-  # sim.generator = GaussianMonopulseGenerator(f)
+  # sim.generator = GaussianMonopulseGenerator(parameters.signal_frequency)
   # sim.generator = GaussianModulatedImpulseGenerator(f)
   # sim.generator = WindowModulatedSinoidImpulse(f)
   sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
