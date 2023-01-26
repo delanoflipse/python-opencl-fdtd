@@ -17,16 +17,17 @@ from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
 from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from lib.scene.RealLifeRoomScene import RealLifeRoomScene
 from lib.simulation import Simulation
 
 # --- SELECT PARAMETERS ---
 SIMULATED_TIME = 0.3
 MAX_FREQUENCY = 200
-OVERSAMPLING = 24
-OCTAVE_BANDS = 36
+OVERSAMPLING = 12
+OCTAVE_BANDS = 6
 SPEAKERS = 1
 MIN_DISTANCE_BETWEEN_SPEAKERS = 2.0
-USE_REALTIME_VISUALS = True
+USE_REALTIME_VISUALS = False
 OUTPUT_VISUALS = True
 OUTPUT_FILE_LOGS = True
 OUTPUT_CSV = True
@@ -43,7 +44,8 @@ testing_frequencies = get_octaval_center_frequencies(
     20, 200, fraction=OCTAVE_BANDS)
 
 # -- SELECT SCENE --
-scene = ShoeboxReferenceScene(parameters)
+# scene = ShoeboxReferenceScene(parameters)
+scene = RealLifeRoomScene(parameters, False)
 grid = scene.build()
 # -----
 
@@ -162,7 +164,9 @@ min_dev = float("inf")
 max_dev = -float("inf")
 
 room_modes = scene.get_room_modes()
-for modal_frequency in room_modes:
+for (modal_frequency, axis_type) in room_modes:
+  if modal_frequency > testing_frequencies[-1]:
+    continue
   axis_best_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
 
 
@@ -257,7 +261,7 @@ def run_source_analysis_iteration(source_index: int) -> bool:
   diff = end - start
   timings.append(diff)
   avg_timing = np.average(timings)
-  indexes_left = len(position_sets) - source_index
+  indexes_left = len(position_sets) - source_index - 1
   time_left = indexes_left * avg_timing
   hours = math.floor(time_left / 60 / 60)
   minutes = math.floor((time_left - hours * 60 * 60) / 60)

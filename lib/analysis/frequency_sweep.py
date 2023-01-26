@@ -76,6 +76,7 @@ def get_avg_dev(standard_deviation: np.ndarray, flags: np.ndarray) -> float:
   return _sum / _count
 
 
+
 @njit(parallel=True)
 def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int) -> Tuple[float, float, float]:
   """Set neighbour flags for geometry"""

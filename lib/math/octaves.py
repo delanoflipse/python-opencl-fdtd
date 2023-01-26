@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+from typing import List
 
 CENTER_FREQUENCY = 1000
 
@@ -14,7 +15,7 @@ def get_octaval_center_frequencies(lower=20, upper=200, fraction=24, exclusive=F
   end_band = math.ceil(upper_it) if exclusive else math.floor(upper_it)
   current_frequency = CENTER_FREQUENCY * 2 ** (-start_band / fraction)
   
-  values: list[float] = []
+  values: List[float] = []
   
   for _ in range(start_band - end_band + 1):
     values.append(current_frequency)

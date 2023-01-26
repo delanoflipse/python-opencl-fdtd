@@ -10,8 +10,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from lib.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
+from lib.charts.line_chart import LineChart
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from lib.scene.RealLifeRoomScene import RealLifeRoomScene
 from lib.math.decibel_weightings import get_a_weighting
 from lib.math.octaves import get_octaval_center_frequencies
 from lib.parameters import SimulationParameters
@@ -29,10 +31,11 @@ parameters.set_max_frequency(200)
 
 SIM_TIME = 0.3
 runtime_steps = int(SIM_TIME / parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=12)
+testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=96)
 
 # ---- Scene ----
-scene = ShoeboxReferenceScene(parameters)
+# scene = ShoeboxReferenceScene(parameters)
+scene = RealLifeRoomScene(parameters, True)
 # -----
 
 grid = scene.build()
@@ -64,14 +67,16 @@ ax_sim = plt.subplot2grid(axes_shape, (0, 0), rowspan=3)
 ax_pres = plt.subplot2grid(axes_shape, (0, 1), rowspan=3)
 ax_analysis = plt.subplot2grid(axes_shape, (0, 2), rowspan=3)
 
-ax_max_an = plt.subplot2grid(axes_shape, (3, 0), colspan=2)
-ax_max_pres = plt.subplot2grid(axes_shape, (3, 2))
-ax_mean_spl = plt.subplot2grid(axes_shape, (4, 0), colspan=3)
+axis_maximum_spl = plt.subplot2grid(axes_shape, (3, 0))
+axis_maximum_pressure = plt.subplot2grid(axes_shape, (3, 1))
+axis_mean_spl = plt.subplot2grid(axes_shape, (4, 0), colspan=3)
+
 
 # datasets
-recalc_axis = [ax_max_an, ax_max_pres, ax_mean_spl]
-it_data, max_an, min_an, max_pres, mean_spl, a_spl = [], [], [], [], [], []
-max_spl, min_spl = [], []
+frequency_list = []
+mean_spl, max_spl, min_spl = [], [], []
+max_pres = []
+max_an, min_an = [], []
 
 # charts
 slice_tmp = grid.pressure[:, SLICE_HEIGHT, :]
@@ -84,11 +89,26 @@ color_bar_2 = plt.colorbar(slice_image_2, ax=ax_analysis)
 slice_image_3 = ax_pres.imshow(slice_tmp, cmap="seismic")
 color_bar_3 = plt.colorbar(slice_image_3, ax=ax_pres)
 
-max_pres_plot, = ax_max_pres.plot([], [], "-")
-max_an_plot, min_an_plot = ax_max_an.plot([], [], [], "-")
-mean_spl_plot, = ax_mean_spl.plot([], [], "-")
-max_spl_plot, = ax_mean_spl.plot([], [], "--")
-min_spl_plot, = ax_mean_spl.plot([], [], "--")
+maximum_spl_chart = LineChart(axis_maximum_spl, "hz_spl", "Max/Min SPL value")
+maximum_spl_chart.add_dataset(frequency_list, max_an)
+maximum_spl_chart.add_dataset(frequency_list, min_an)
+
+maximum_pressure_chart = LineChart(
+    axis_maximum_pressure, "hz_pa", "Maximum Pressure")
+maximum_pressure_chart.add_dataset(frequency_list, max_pres)
+
+spl_values_chart = LineChart(
+    axis_mean_spl, "hz_spl", "SPL average and range")
+spl_values_chart.add_dataset(frequency_list, mean_spl)
+spl_values_chart.add_dataset(frequency_list, max_spl, "--")
+spl_values_chart.add_dataset(frequency_list, min_spl, "--")
+
+charts = [
+    maximum_spl_chart,
+    maximum_pressure_chart,
+    spl_values_chart,
+]
+
 
 ax_sim.set_title("Simulation")
 ax_sim.set_xlabel("Width Index")
@@ -106,27 +126,12 @@ color_bar.set_label("SPL (dB)")
 color_bar_2.set_label("Quality")
 color_bar_3.set_label("Relative Pressure(Pa)")
 
-ax_max_pres.set_title("Maximum Pressure")
-ax_max_pres.set_xlabel("Frequency (hz)")
-ax_max_pres.set_ylabel("Maximum value")
-
-ax_max_an.set_title("Max/Min SPL value")
-ax_max_an.set_xlabel("Frequency (hz)")
-ax_max_an.set_ylabel("SPL (dB)")
-
-ax_mean_spl.set_title("Average SPL in listener region")
-ax_mean_spl.set_xlabel("Frequency (hz)")
-ax_mean_spl.set_ylabel("Average SPL (dB)")
-
-for ax in recalc_axis:
-  ax.set_xscale('log', base=2)
-  ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
-  ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-
 # Room modes
 room_modes = scene.get_room_modes()
-for modal_frequency in room_modes:
-  ax_mean_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
+for (modal_frequency, axis_type) in room_modes:
+  if modal_frequency > testing_frequencies[-1]:
+    continue
+  axis_mean_spl.axvline(modal_frequency, linestyle='--', color='k', alpha=0.5)
 
 
 fig.tight_layout()
@@ -148,12 +153,12 @@ def animate(i) -> None:
     return
   f = testing_frequencies[test_index]
   parameters.set_signal_frequency(f)
-  it_data.append(f)
+  frequency_list.append(f)
   # a_weighting = get_a_weighting(f)
-  sim.generator = GaussianMonopulseGenerator(parameters.signal_frequency)
+  # sim.generator = GaussianMonopulseGenerator(parameters.signal_frequency)
   # sim.generator = GaussianModulatedImpulseGenerator(f)
   # sim.generator = WindowModulatedSinoidImpulse(f)
-  # sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
+  sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
 
   scene.rebuild()
   sim.sync_read_buffers()
@@ -189,16 +194,8 @@ def animate(i) -> None:
   min_spl.append(min_spl_value)
   max_spl.append(max_spl_value)
 
-  max_an_plot.set_data(it_data, max_an)
-  mean_spl_plot.set_data(it_data, mean_spl)
-  min_an_plot.set_data(it_data, min_an)
-  max_pres_plot.set_data(it_data, max_pres)
-  max_spl_plot.set_data(it_data, max_spl)
-  min_spl_plot.set_data(it_data, min_spl)
-
-  for ax in recalc_axis:
-    ax.relim()
-    ax.autoscale_view()
+  for chart in charts:
+    chart.render()
 
   fig.canvas.flush_events()
   fig.tight_layout()

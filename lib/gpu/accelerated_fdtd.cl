@@ -65,14 +65,21 @@ __kernel void compact_step(__global double *previous_pressure,
   }
 
   double stencil_sum = 0.0;
-  if (neighbour_flag >> 0 & 1) stencil_sum += pressure[i - w_stride];
-  if (neighbour_flag >> 1 & 1) stencil_sum += pressure[i + w_stride];
-  if (neighbour_flag >> 2 & 1) stencil_sum += pressure[i - h_stride];
-  if (neighbour_flag >> 3 & 1) stencil_sum += pressure[i + h_stride];
-  if (neighbour_flag >> 4 & 1) stencil_sum += pressure[i - d_stride];
-  if (neighbour_flag >> 5 & 1) stencil_sum += pressure[i + d_stride];
+  if (neighbour_flag >> 0 & 1)
+    stencil_sum += pressure[i - w_stride];
+  if (neighbour_flag >> 1 & 1)
+    stencil_sum += pressure[i + w_stride];
+  if (neighbour_flag >> 2 & 1)
+    stencil_sum += pressure[i - h_stride];
+  if (neighbour_flag >> 3 & 1)
+    stencil_sum += pressure[i + h_stride];
+  if (neighbour_flag >> 4 & 1)
+    stencil_sum += pressure[i - d_stride];
+  if (neighbour_flag >> 5 & 1)
+    stencil_sum += pressure[i + d_stride];
 
-  double next_value = beta_1_factor * (neighbour_factor * current + lambda2 * stencil_sum -
+  double next_value =
+      beta_1_factor * (neighbour_factor * current + lambda2 * stencil_sum -
                        beta_2_factor * previous);
 
   if (is_source && !isnan(signal)) {
@@ -86,17 +93,18 @@ __kernel void compact_step(__global double *previous_pressure,
   pressure_next[i] = next_value;
 }
 
-__kernel void compact_schema_step(__global double *previous_pressure,
-                           __global double *pressure,
-                           __global double *pressure_next,
-                           __global double *betas, __global char *geometry,
-                           __global uint *neighbours, uint size_w, uint size_h,
-                           uint size_d, double lambda, double pa, double pb, double d1, double d2, double d3, double d4, double signal) {
-  
+__kernel void
+compact_schema_step(__global double *previous_pressure,
+                    __global double *pressure, __global double *pressure_next,
+                    __global double *betas, __global char *geometry,
+                    __global uint *neighbours, uint size_w, uint size_h,
+                    uint size_d, double lambda, double pa, double pb, double d1,
+                    double d2, double d3, double d4, double signal) {
+
   size_t d_stride = 1;
   size_t h_stride = size_d;
   size_t w_stride = size_d * size_h;
-  
+
   // size_t w = get_global_id(0);
   // size_t h = get_global_id(1);
   // size_t d = get_global_id(2);
@@ -106,7 +114,7 @@ __kernel void compact_schema_step(__global double *previous_pressure,
   size_t w = (i / (size_h * size_d)) % size_w;
   size_t h = (i / (size_d)) % size_h;
   size_t d = i % size_d;
-  
+
   size_t size = size_d * size_h * size_w;
   char geometry_type = geometry[i];
 
@@ -136,7 +144,8 @@ __kernel void compact_schema_step(__global double *previous_pressure,
   bool has_k1_neighbours = d1 == 0.0 || k_neighbour_1 == 6;
   bool has_k2_neighbours = d2 == 0.0 || k_neighbour_2 == 12;
   bool has_k3_neighbours = d3 == 0.0 || k_neighbour_3 == 8;
-  bool has_wall_neighbours = !has_k1_neighbours || !has_k2_neighbours || !has_k3_neighbours;
+  bool has_wall_neighbours =
+      !has_k1_neighbours || !has_k2_neighbours || !has_k3_neighbours;
 
   double neighbour_factor = d4;
   double beta_1_factor = 1.0;
@@ -144,12 +153,11 @@ __kernel void compact_schema_step(__global double *previous_pressure,
   double lambda2 = lambda * lambda;
 
   if (has_wall_neighbours) {
-    neighbour_factor = 2 -(double)(k_neighbour_1) * lambda2
-      + 8.0 * pa * lambda2
-      - 12.0 * pb * lambda2;
-      // + (double)(k_neighbour_2) * pa * lambda2
-      // - (double)(k_neighbour_3) * pb * lambda2;
-    
+    neighbour_factor = 2 - (double)(k_neighbour_1)*lambda2 +
+                       8.0 * pa * lambda2 - 12.0 * pb * lambda2;
+    // + (double)(k_neighbour_2) * pa * lambda2
+    // - (double)(k_neighbour_3) * pb * lambda2;
+
     // double beta = betas[i];
     // beta_1_factor = 1.0 / (1.0 + lambda * beta);
     // beta_2_factor = 1.0 - lambda * beta;
@@ -163,66 +171,96 @@ __kernel void compact_schema_step(__global double *previous_pressure,
 
   // D1 - 1x neighbours
   if (d1 != 0.0) {
-    if (neighbour_flag >> 0 & 1) d1_sum += pressure[i - w_stride];
-    if (neighbour_flag >> 1 & 1) d1_sum += pressure[i + w_stride];
-    if (neighbour_flag >> 2 & 1) d1_sum += pressure[i - h_stride];
-    if (neighbour_flag >> 3 & 1) d1_sum += pressure[i + h_stride];
-    if (neighbour_flag >> 4 & 1) d1_sum += pressure[i - d_stride];
-    if (neighbour_flag >> 5 & 1) d1_sum += pressure[i + d_stride];
+    if (neighbour_flag >> 0 & 1)
+      d1_sum += pressure[i - w_stride];
+    if (neighbour_flag >> 1 & 1)
+      d1_sum += pressure[i + w_stride];
+    if (neighbour_flag >> 2 & 1)
+      d1_sum += pressure[i - h_stride];
+    if (neighbour_flag >> 3 & 1)
+      d1_sum += pressure[i + h_stride];
+    if (neighbour_flag >> 4 & 1)
+      d1_sum += pressure[i - d_stride];
+    if (neighbour_flag >> 5 & 1)
+      d1_sum += pressure[i + d_stride];
   }
 
   // D2 - 2x neighbours
   if (d2 != 0.0) {
-    if (neighbour_flag >> 6 & 1) d2_sum += pressure[i - w_stride - h_stride];
-    if (neighbour_flag >> 7 & 1) d2_sum += pressure[i - w_stride + h_stride];
-    if (neighbour_flag >> 8 & 1) d2_sum += pressure[i + w_stride + h_stride];
-    if (neighbour_flag >> 9 & 1) d2_sum += pressure[i + w_stride - h_stride];
-    if (neighbour_flag >> 10 & 1) d2_sum += pressure[i - d_stride - h_stride];
-    if (neighbour_flag >> 11 & 1) d2_sum += pressure[i - d_stride + h_stride];
-    if (neighbour_flag >> 12 & 1) d2_sum += pressure[i + d_stride + h_stride];
-    if (neighbour_flag >> 13 & 1) d2_sum += pressure[i + d_stride - h_stride];
-    if (neighbour_flag >> 14 & 1) d2_sum += pressure[i - w_stride - d_stride];
-    if (neighbour_flag >> 15 & 1) d2_sum += pressure[i - w_stride + d_stride];
-    if (neighbour_flag >> 16 & 1) d2_sum += pressure[i + w_stride + d_stride];
-    if (neighbour_flag >> 17 & 1) d2_sum += pressure[i + w_stride - d_stride];
+    if (neighbour_flag >> 6 & 1)
+      d2_sum += pressure[i - w_stride - h_stride];
+    if (neighbour_flag >> 7 & 1)
+      d2_sum += pressure[i - w_stride + h_stride];
+    if (neighbour_flag >> 8 & 1)
+      d2_sum += pressure[i + w_stride + h_stride];
+    if (neighbour_flag >> 9 & 1)
+      d2_sum += pressure[i + w_stride - h_stride];
+    if (neighbour_flag >> 10 & 1)
+      d2_sum += pressure[i - d_stride - h_stride];
+    if (neighbour_flag >> 11 & 1)
+      d2_sum += pressure[i - d_stride + h_stride];
+    if (neighbour_flag >> 12 & 1)
+      d2_sum += pressure[i + d_stride + h_stride];
+    if (neighbour_flag >> 13 & 1)
+      d2_sum += pressure[i + d_stride - h_stride];
+    if (neighbour_flag >> 14 & 1)
+      d2_sum += pressure[i - w_stride - d_stride];
+    if (neighbour_flag >> 15 & 1)
+      d2_sum += pressure[i - w_stride + d_stride];
+    if (neighbour_flag >> 16 & 1)
+      d2_sum += pressure[i + w_stride + d_stride];
+    if (neighbour_flag >> 17 & 1)
+      d2_sum += pressure[i + w_stride - d_stride];
     // if (neighbour_flag >> 6 & 1) d2_sum += pressure[i + w_stride + h_stride];
     // if (neighbour_flag >> 7 & 1) d2_sum += pressure[i + w_stride - h_stride];
     // if (neighbour_flag >> 8 & 1) d2_sum += pressure[i - w_stride - h_stride];
     // if (neighbour_flag >> 9 & 1) d2_sum += pressure[i - w_stride + h_stride];
-    // if (neighbour_flag >> 10 & 1) d2_sum += pressure[i + d_stride + h_stride];
-    // if (neighbour_flag >> 11 & 1) d2_sum += pressure[i + d_stride - h_stride];
-    // if (neighbour_flag >> 12 & 1) d2_sum += pressure[i - d_stride - h_stride];
-    // if (neighbour_flag >> 13 & 1) d2_sum += pressure[i - d_stride + h_stride];
-    // if (neighbour_flag >> 14 & 1) d2_sum += pressure[i + w_stride + d_stride];
-    // if (neighbour_flag >> 15 & 1) d2_sum += pressure[i + w_stride - d_stride];
-    // if (neighbour_flag >> 16 & 1) d2_sum += pressure[i - w_stride - d_stride];
-    // if (neighbour_flag >> 17 & 1) d2_sum += pressure[i - w_stride + d_stride];
+    // if (neighbour_flag >> 10 & 1) d2_sum += pressure[i + d_stride +
+    // h_stride]; if (neighbour_flag >> 11 & 1) d2_sum += pressure[i + d_stride
+    // - h_stride]; if (neighbour_flag >> 12 & 1) d2_sum += pressure[i -
+    // d_stride - h_stride]; if (neighbour_flag >> 13 & 1) d2_sum += pressure[i
+    // - d_stride + h_stride]; if (neighbour_flag >> 14 & 1) d2_sum +=
+    // pressure[i + w_stride + d_stride]; if (neighbour_flag >> 15 & 1) d2_sum
+    // += pressure[i + w_stride - d_stride]; if (neighbour_flag >> 16 & 1)
+    // d2_sum += pressure[i - w_stride - d_stride]; if (neighbour_flag >> 17 &
+    // 1) d2_sum += pressure[i - w_stride + d_stride];
   }
 
   // D3 - 3x neighbours
   if (d3 != 0.0) {
-    // if (neighbour_flag >> 18 & 1) d3_sum += pressure[i + w_stride + h_stride + d_stride];
-    // if (neighbour_flag >> 19 & 1) d3_sum += pressure[i + w_stride + h_stride - d_stride];
-    // if (neighbour_flag >> 20 & 1) d3_sum += pressure[i + w_stride - h_stride + d_stride];
-    // if (neighbour_flag >> 21 & 1) d3_sum += pressure[i + w_stride - h_stride - d_stride];
-    // if (neighbour_flag >> 22 & 1) d3_sum += pressure[i - w_stride + h_stride + d_stride];
-    // if (neighbour_flag >> 23 & 1) d3_sum += pressure[i - w_stride + h_stride - d_stride];
-    // if (neighbour_flag >> 24 & 1) d3_sum += pressure[i - w_stride - h_stride + d_stride];
-    // if (neighbour_flag >> 25 & 1) d3_sum += pressure[i - w_stride - h_stride - d_stride];
-    
-    if (neighbour_flag >> 18 & 1) d3_sum += pressure[i - w_stride - h_stride - d_stride];
-    if (neighbour_flag >> 19 & 1) d3_sum += pressure[i - w_stride - h_stride + d_stride];
-    if (neighbour_flag >> 20 & 1) d3_sum += pressure[i - w_stride + h_stride - d_stride];
-    if (neighbour_flag >> 21 & 1) d3_sum += pressure[i - w_stride + h_stride + d_stride];
-    if (neighbour_flag >> 22 & 1) d3_sum += pressure[i + w_stride - h_stride - d_stride];
-    if (neighbour_flag >> 23 & 1) d3_sum += pressure[i + w_stride - h_stride + d_stride];
-    if (neighbour_flag >> 24 & 1) d3_sum += pressure[i + w_stride + h_stride - d_stride];
-    if (neighbour_flag >> 25 & 1) d3_sum += pressure[i + w_stride + h_stride + d_stride];
+    // if (neighbour_flag >> 18 & 1) d3_sum += pressure[i + w_stride + h_stride
+    // + d_stride]; if (neighbour_flag >> 19 & 1) d3_sum += pressure[i +
+    // w_stride + h_stride - d_stride]; if (neighbour_flag >> 20 & 1) d3_sum +=
+    // pressure[i + w_stride - h_stride + d_stride]; if (neighbour_flag >> 21 &
+    // 1) d3_sum += pressure[i + w_stride - h_stride - d_stride]; if
+    // (neighbour_flag >> 22 & 1) d3_sum += pressure[i - w_stride + h_stride +
+    // d_stride]; if (neighbour_flag >> 23 & 1) d3_sum += pressure[i - w_stride
+    // + h_stride - d_stride]; if (neighbour_flag >> 24 & 1) d3_sum +=
+    // pressure[i - w_stride - h_stride + d_stride]; if (neighbour_flag >> 25 &
+    // 1) d3_sum += pressure[i - w_stride - h_stride - d_stride];
+
+    if (neighbour_flag >> 18 & 1)
+      d3_sum += pressure[i - w_stride - h_stride - d_stride];
+    if (neighbour_flag >> 19 & 1)
+      d3_sum += pressure[i - w_stride - h_stride + d_stride];
+    if (neighbour_flag >> 20 & 1)
+      d3_sum += pressure[i - w_stride + h_stride - d_stride];
+    if (neighbour_flag >> 21 & 1)
+      d3_sum += pressure[i - w_stride + h_stride + d_stride];
+    if (neighbour_flag >> 22 & 1)
+      d3_sum += pressure[i + w_stride - h_stride - d_stride];
+    if (neighbour_flag >> 23 & 1)
+      d3_sum += pressure[i + w_stride - h_stride + d_stride];
+    if (neighbour_flag >> 24 & 1)
+      d3_sum += pressure[i + w_stride + h_stride - d_stride];
+    if (neighbour_flag >> 25 & 1)
+      d3_sum += pressure[i + w_stride + h_stride + d_stride];
   }
 
   double stencil_sum = d1 * d1_sum + d2 * d2_sum + d3 * d3_sum;
   double current_sum = neighbour_factor * current;
-  double next_value = beta_1_factor * (stencil_sum + current_sum - beta_2_factor * previous);
+  double next_value =
+      beta_1_factor * (stencil_sum + current_sum - beta_2_factor * previous);
 
   if (is_source && !isnan(signal)) {
     if (USE_HYBRID_HARD_SOURCE) {
@@ -275,7 +313,7 @@ __kernel void analysis_step(__global double *pressure,
   // double delta_pressure = current_pressure - previous_pressure;
   // double actual_pressure = rho * delta_pressure;
   double actual_pressure = current_pressure;
-    // TODO: enable again if needed
+  // TODO: enable again if needed
   // analysis[pres_i] = actual_pressure;
 
   double rms_addition = actual_pressure * actual_pressure * 25e8;

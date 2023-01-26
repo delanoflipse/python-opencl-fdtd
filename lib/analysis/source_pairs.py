@@ -5,7 +5,7 @@ from typing import Tuple, List
 def get_n_pairs_with_min_distance(locations: List[Tuple[int, int, int]], n_count:int, spacing: float, min_space: float) -> List[List[Tuple[int, int, int]]]:
   if n_count == 1:
     return list(map(lambda x: [x], locations))
-  pairs:  list[list[tuple[int, int, int]]] = []
+  pairs:  List[List[Tuple[int, int, int]]] = []
   combined = itertools.combinations(locations, n_count)
   rel_dist = (min_space / spacing)
   dist_check = rel_dist * rel_dist

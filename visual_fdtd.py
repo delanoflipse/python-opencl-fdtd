@@ -35,10 +35,10 @@ recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec, ax_an_db]
 
 parameters = SimulationParameters()
 # parameters.set_oversampling(16)
-parameters.set_max_frequency(200)
+parameters.set_max_frequency(400)
 parameters.set_signal_frequency(400.0)
 # parameters.set_signal_frequency(62.0)
-parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
+# parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
 # parameters.set_scheme(1.0, 1 / 4, 0.0)  # CCP
 # parameters.set_scheme(1.0, 1.0 / 2.0, 1.0 / 4.0)  # OCTO
 # parameters.set_scheme(1 / math.sqrt(3), 0.2034, 0.0438)  # IDWM
@@ -127,8 +127,8 @@ fig.tight_layout()
 
 def animate(i) -> None:
   global last_sim_maximum, last_an_maximum
-  if sim.time > 0.01:
-    return
+  # if sim.time > 0.01:
+  #   return
   sim.step(ITERATIONS_PER_STEP)
 
   x_data.append(sim.time)

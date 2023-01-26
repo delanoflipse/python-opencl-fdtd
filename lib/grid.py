@@ -1,7 +1,7 @@
 import math
 import sys
-import numpy as np
 from typing import Tuple, List
+import numpy as np
 
 from numba import njit, prange, float64
 from numba.experimental import jitclass
@@ -119,7 +119,7 @@ class SimulationGrid:
     float64_buffers = 5 + self.analysis_values
     int8_buffers = 2
     self.storage_estimate = self.grid_size * (float64_buffers*8 + int8_buffers)
-    self.source_set: list[Tuple[int, int, int]] = []
+    self.source_set: List[Tuple[int, int, int]] = []
     self.source_count = -1
     self.listener_count = -1
     self.is_build = False
@@ -213,7 +213,7 @@ def unset_source_flag(geometry: np.ndarray) -> None:
 
 def get_source_locations(geometry: np.ndarray) -> List[Tuple[int, int, int]]:
   """Count the number of cells that have the SOURCE_REGION_FLAG set"""
-  source_set: list[Tuple[int, int, int]] = []
+  source_set: List[Tuple[int, int, int]] = []
 
   for w in prange(geometry.shape[0]):
     for h in prange(geometry.shape[1]):
@@ -345,7 +345,7 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
 # @njit(parallel=True)
 def populate_inner_betas(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta, d1: float, d2: float, d3: float) -> None:
   """Set neighbour flags for geometry"""
-  points: list[tuple[int, int, int, float]] = [
+  points: List[Tuple[int, int, int, float]] = [
       # D1
       (-1, 0, 0, d1),
       (1, 0, 0, d1),

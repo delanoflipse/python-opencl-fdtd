@@ -10,7 +10,7 @@ iterations_per_step = 2 ** 12
 step_count = 2 ** 3
 params = SimulationParameters()
 params.set_max_frequency(200)
-params.set_oversampling(24)
+params.set_oversampling(128)
 # params.set_scheme(1.0, 1 / 4, 1 / 16)
 
 # ---- SCENE ----
