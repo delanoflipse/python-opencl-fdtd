@@ -7,5 +7,6 @@
 # text.color: white
 # axes.labelcolor: white
 savefig.transparent: True
+font.family: Times New Roman
 # savefig.facecolor: white
 # savefig.edgecolor: black

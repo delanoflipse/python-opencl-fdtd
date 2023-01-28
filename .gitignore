@@ -1,3 +1,4 @@
 *.exe
 *.stackdump
 __pycache__
+comparison_chart.py

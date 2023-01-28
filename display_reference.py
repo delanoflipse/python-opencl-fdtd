@@ -14,6 +14,7 @@ file_dir = os.path.dirname(__file__)
 parser = argparse.ArgumentParser()
 parser.add_argument("rew_path", type=Path)
 parser.add_argument("result_path", type=Path)
+parser.add_argument("result_with_path", type=Path)
 parser.add_argument("--export", action=argparse.BooleanOptionalAction)
 
 parsed = parser.parse_args()
@@ -25,8 +26,11 @@ trivial_csv = os.path.join(parsed.rew_path, "simulated.txt")
 (f2, v2) = parse_rew_file(trivial_csv)
 
 simulated_csv = parsed.result_path
+simulated_csv2 = parsed.result_with_path
 output = OutputParser(simulated_csv)
 output.parse_values()
+output2 = OutputParser(simulated_csv2)
+output2.parse_values()
 
 plt.style.use(os.path.join(file_dir, './styles/paper.mplstyle'))
 fig = plt.gcf()
@@ -41,13 +45,15 @@ spl_chart.add_dataset(f2, v2, label="Analytic solution")
 
 spl_chart.add_dataset(output.frequencies, output.best_set, "-",
                       label="Simulated")
+
+spl_chart.add_dataset(output2.frequencies, output2.best_set, "-",
+                      label="Simulated with furniture")
 axis.legend()
 
 spl_chart.render()
 
 plt.tight_layout(pad=2)
 if should_export:
-  # plt.savefig(export_path, dpi=300)
   pass
 else:
   plt.show()

@@ -12,7 +12,7 @@ from typing import List
 import numpy as np
 from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 from lib.parameters import SimulationParameters
-from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from lib.scene.RealLifeRoomScene import RealLifeRoomScene
 
 if len(sys.argv) == 1:
   print('No file given. Usage: python parse_output.py <path/to/output.csv>')
@@ -26,7 +26,7 @@ parsed = parser.parse_args()
 should_export = parsed.export
 
 file_dir = os.path.dirname(__file__)
-csv_path = os.path.join(file_dir, parsed.file_path)
+csv_path = str(parsed.file_path)
 export_path = csv_path + ".png"
 print(csv_path)
 
@@ -39,7 +39,7 @@ parameters.set_oversampling(16)
 parameters.set_max_frequency(200)
 
 # scene = OfficeScene(parameters)
-scene = ShoeboxReferenceScene(parameters)
+scene = RealLifeRoomScene(parameters)
 
 grid = scene.build()
 
@@ -88,20 +88,19 @@ for w in range(grid.width_parts):
 # chart
 plt.style.use(os.path.join(file_dir, './styles/paper.mplstyle'))
 fig = plt.gcf()
-fig.set_dpi(150)
+fig.set_dpi(200)
 fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
-axes_shape = (2, 3)
+axes_shape = (5, 5)
 # axis_spl_all = plt.subplot2grid(axes_shape, (0, 0))
-axis_scores = plt.subplot2grid(axes_shape, (0, 0))
-
-axis_best_worst = plt.subplot2grid(axes_shape, (0, 1))
+# axis_scores = plt.subplot2grid(axes_shape, (0, 0))
+axis_best_worst = plt.subplot2grid(axes_shape, (0, 0), colspan=2)
 axis_boxplot_spl = plt.subplot2grid(axes_shape, (0, 2))
 axis_floor_map = plt.subplot2grid(axes_shape, (1, 0), projection='3d')
 axis_site_map = plt.subplot2grid(axes_shape, (1, 1), projection='3d')
-axis_value_map = plt.subplot2grid(axes_shape, (1, 2), projection='3d')
+axis_value_map = plt.subplot2grid(axes_shape, (1, 2), projection='3d', rowspan=3, colspan=3)
 
 # axis_spl_all.set_title("SPL (dB) values for all positions")
-axis_scores.set_title("Scores per index")
+# axis_scores.set_title("Scores per index")
 axis_best_worst.set_title("Comparison of SPL of best and worst position")
 axis_boxplot_spl.set_title("Range of SPL values")
 axis_floor_map.set_title("Solid objects")
@@ -151,8 +150,9 @@ for i, row in enumerate(reader):
       sum_per_frequency.append(0)
       values_per_frequency.append([])
     continue
-  derrivative2 = np.diff(bands, n=1)
-  value = np.sum(np.power(derrivative2, 2))
+  derrivative = np.diff(bands, n=1)
+  value = np.sum(np.power(derrivative, 2))
+  # value = np.sum(np.abs(derrivative))
   if value == 0.0:
     continue
   count += 1
@@ -209,7 +209,7 @@ for i in range(min(5, len(optimal))):
 
 csv_file.close()
 
-axis_scores.plot(indexes, value_index, "-")
+# axis_scores.plot(indexes, value_index, "-")
 
 boxplot = axis_boxplot_spl.boxplot(
     values_per_frequency, positions=frequencies, sym="", meanline=True)
@@ -241,6 +241,7 @@ axis_site_map.voxels(site_map_visible, alpha=0.8, facecolors=site_map)
 min_max_range = max_value - min_value
 normalized_value_map = 1 - (value_map - min_value) / min_max_range
 value_map_colors = plt.cm.RdYlGn(normalized_value_map)
+
 axis_value_map.voxels(
     value_map_visible, facecolors=value_map_colors, alpha=0.5)
 
@@ -259,7 +260,7 @@ for ax in [axis_best_worst, axis_boxplot_spl]:
   ax.relim(())
   ax.autoscale_view()
 
-axis_scores.autoscale_view()
+# axis_scores.autoscale_view()
 
 
 plt.tight_layout(pad=2)
