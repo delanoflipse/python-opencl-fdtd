@@ -224,7 +224,7 @@ def get_averge_spl(geometry: np.ndarray, source_w: int, source_h: int, source_d:
           dist_h = source_h - h
           dist_d = source_d - d
           dist_sqrtd = (dist_w * dist_w + dist_h * dist_h + dist_d * dist_d)
-          dl = 20 * math.log(dist_sqrtd)
+          dl = 10 * math.log(dist_sqrtd)
           avg_sum += spl_cur + dl
           avg_count += 1.0
   return avg_sum / avg_count
