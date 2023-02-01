@@ -19,6 +19,9 @@ class LineChart(Chart):
       self.axis.set_xscale('log')
       self.axis.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
       self.axis.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+      
+    if x_type == "linhz":
+      self.axis.set_xlabel("Frequency (hz)")
 
     if y_type == "spl":
       self.axis.set_ylabel("Sound Pressure Level (dB)")

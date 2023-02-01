@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 # scene grid
 parameters = SimulationParameters()
-parameters.set_oversampling(24)
+parameters.set_oversampling(20)
 parameters.set_max_frequency(200)
 
 # scene = OfficeScene(parameters)
@@ -22,6 +22,7 @@ scene = RealLifeRoomScene(parameters)
 grid = scene.build()
 shape = grid.grid_shape
 
+print(f'l: {grid.listener_count}\ts:{grid.source_count}')
 
 # chart
 file_dir = os.path.dirname(__file__)

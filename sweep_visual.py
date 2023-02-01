@@ -23,31 +23,37 @@ from lib.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-parameters.set_oversampling(16)
+parameters.set_oversampling(32)
 parameters.set_max_frequency(200)
 # parameters.set_scheme(1 / math.sqrt(3), 0.0, 0.0)  # SLF
 # parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
 # parameters.set_scheme(1 / math.sqrt(3), 0.2034, 0.0438)  # IDWM
 
-SIM_TIME = 0.3
+SIM_TIME = 8.0
 runtime_steps = int(SIM_TIME / parameters.dt)
-testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=96)
 
 # ---- Scene ----
 # scene = ShoeboxReferenceScene(parameters)
-scene = RealLifeRoomScene(parameters, True)
+scene = RealLifeRoomScene(parameters, True, False)
 # -----
 
 grid = scene.build()
 
 # SLICE_HEIGHT = grid.scale(1.82)
 SLICE_HEIGHT = grid.scale(scene.height / 2)
+SLICE_WIDTH = grid.scale(scene.width / 2)
+SLICE_DEPTH = grid.scale(scene.depth / 2)
 # SLICE_HEIGHT = grid.scale(.97)
 # SLICE_HEIGHT = grid.scale(.97) + 1
 
-sub_location = grid.pos(0.3, 0.3, 3.5)
-grid.select_source_locations([grid.source_set[0]])
-# grid.select_source_locations([sub_location])
+room_modes = scene.get_room_modes()
+# testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=96)
+room_frequencies, _ = zip(*room_modes)
+testing_frequencies = np.array(sorted(room_frequencies))
+
+sub_location = grid.pos(0, 0, 0)
+# grid.select_source_locations([grid.source_set[0]])
+grid.select_source_locations([sub_location])
 
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
@@ -79,14 +85,16 @@ max_pres = []
 max_an, min_an = [], []
 
 # charts
-slice_tmp = grid.pressure[:, SLICE_HEIGHT, :]
-slice_image = ax_sim.imshow(slice_tmp, cmap="OrRd")
+slice_image = ax_sim.imshow(grid.pressure[SLICE_WIDTH, :, :], cmap="OrRd")
 color_bar = plt.colorbar(slice_image, ax=ax_sim)
 
-slice_image_2 = ax_analysis.imshow(slice_tmp, cmap="RdYlGn")
+# slice_image_2 = ax_analysis.imshow(slice_tmp, cmap="RdYlGn")
+slice_image_2 = ax_analysis.imshow(
+    grid.pressure[:, SLICE_HEIGHT, :], cmap="OrRd")
 color_bar_2 = plt.colorbar(slice_image_2, ax=ax_analysis)
 
-slice_image_3 = ax_pres.imshow(slice_tmp, cmap="seismic")
+# slice_image_3 = ax_pres.imshow(slice_tmp, cmap="seismic")
+slice_image_3 = ax_pres.imshow(grid.pressure[:, :, SLICE_DEPTH], cmap="OrRd")
 color_bar_3 = plt.colorbar(slice_image_3, ax=ax_pres)
 
 maximum_spl_chart = LineChart(axis_maximum_spl, "hz_spl", "Max/Min SPL value")
@@ -110,24 +118,23 @@ charts = [
 ]
 
 
-ax_sim.set_title("Simulation")
-ax_sim.set_xlabel("Width Index")
-ax_sim.set_ylabel("Depth Index")
+ax_sim.set_title("Width lice")
+ax_sim.set_ylabel("Height Index")
+ax_sim.set_xlabel("Depth Index")
 
-ax_analysis.set_title("Analysis")
-ax_analysis.set_xlabel("Width Index")
-ax_analysis.set_ylabel("Depth Index")
+ax_analysis.set_title("Height slice")
+ax_analysis.set_ylabel("Width Index")
+ax_analysis.set_xlabel("Depth Index")
 
-ax_pres.set_title("Pressure check")
-ax_pres.set_xlabel("Width Index")
-ax_pres.set_ylabel("Depth Index")
+ax_pres.set_title("Depth slice")
+ax_pres.set_ylabel("Width Index")
+ax_pres.set_xlabel("Heigh Index")
 
-color_bar.set_label("SPL (dB)")
-color_bar_2.set_label("Quality")
-color_bar_3.set_label("Relative Pressure(Pa)")
+color_bar.set_label("dB")
+color_bar_2.set_label("dB")
+color_bar_3.set_label("dB")
 
 # Room modes
-room_modes = scene.get_room_modes()
 for (modal_frequency, axis_type) in room_modes:
   if modal_frequency > testing_frequencies[-1]:
     continue
@@ -154,6 +161,7 @@ def animate(i) -> None:
   f = testing_frequencies[test_index]
   parameters.set_signal_frequency(f)
   frequency_list.append(f)
+  print(f)
   # a_weighting = get_a_weighting(f)
   # sim.generator = GaussianMonopulseGenerator(parameters.signal_frequency)
   # sim.generator = GaussianModulatedImpulseGenerator(f)
@@ -171,37 +179,51 @@ def animate(i) -> None:
       sim.grid.analysis, sim.grid.geometry, analysis_key_index)
 
   leq_analysis = grid.analysis[:, :, :, analysis_key_index]
-  max_l_eq = np.nanmax(leq_analysis)
-  min_l_eq = np.nanmin(leq_analysis)
-  slice_leq = leq_analysis[:, SLICE_HEIGHT, :]
-  slice_image.set_data(slice_leq)
-  slice_image.set_clim(min_l_eq, max_l_eq)
+  slice_leq_w = leq_analysis[SLICE_WIDTH, :, :]
+  slice_leq_h = leq_analysis[:, SLICE_HEIGHT, :]
+  slice_leq_d = leq_analysis[:, :, SLICE_DEPTH]
 
-  slice_2 = sweep_ranking[:, SLICE_HEIGHT, :]
-  slice_image_2.set_data(slice_2)
-  slice_image_2.set_clim(slice_2.min(), slice_2.max())
+  # max_l_eq = np.nanmax(leq_analysis)
+  # min_l_eq = np.nanmin(leq_analysis)
 
-  slice_3 = sim.grid.pressure[:, SLICE_HEIGHT, :]
-  slice_3_max = max(abs(sim.grid.pressure.min()),
-                    abs(sim.grid.pressure.max()))
-  slice_image_3.set_data(slice_3)
-  slice_image_3.set_clim(-slice_3_max, slice_3_max)
+  slice_image.set_data(slice_leq_w)
+  slice_image.set_clim(np.nanmin(slice_leq_w), np.nanmax(slice_leq_w))
+
+  slice_image_2.set_data(slice_leq_h)
+  slice_image_2.set_clim(np.nanmin(slice_leq_h), np.nanmax(slice_leq_h))
+
+  max_l_eq = np.nanmax(slice_leq_d)
+  min_l_eq = np.nanmin(slice_leq_d)
+  print(max_l_eq, min_l_eq)
+  slice_image_3.set_data(slice_leq_d)
+  slice_image_3.set_clim(min_l_eq, max_l_eq)
+
+  # slice_2 = sweep_ranking[:, SLICE_HEIGHT, :]
+  # slice_image_2.set_data(slice_2)
+  # slice_image_2.set_clim(slice_2.min(), slice_2.max())
+
+  # slice_3 = sim.grid.pressure[:, SLICE_HEIGHT, :]
+  # slice_3_max = max(abs(sim.grid.pressure.min()),
+  #                   abs(sim.grid.pressure.max()))
+  # slice_image_3.set_data(slice_3)
+  # slice_image_3.set_clim(-slice_3_max, slice_3_max)
 
   max_an.append(max_l_eq)
   min_an.append(min_l_eq)
-  max_pres.append(slice_3_max)
   mean_spl.append(avg_spl)
   min_spl.append(min_spl_value)
   max_spl.append(max_spl_value)
 
-  for chart in charts:
-    chart.render()
+  # for chart in charts:
+  #   chart.render()
 
   fig.canvas.flush_events()
-  fig.tight_layout()
-  print(i, f'{f}hz', sim.time, avg_spl)
-  test_index += 1
+  # fig.tight_layout()
 
+  print(i, f'{f}hz', sim.time, avg_spl)
+
+  test_index += 1
+  plt.savefig(f"output/capture/{i}.png", dpi=300)
   # End simulation if no frequencies are left
   if test_index == testing_frequencies.size:
     test_index = -1

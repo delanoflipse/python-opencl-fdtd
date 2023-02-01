@@ -34,12 +34,12 @@ matplotlib.use('Agg')
 # TODO: combine with full sweep!
 
 cli_argument_parser = argparse.ArgumentParser()
-cli_argument_parser.add_argument("-s", "--scene", default="shoebox")
+cli_argument_parser.add_argument("-s", "--scene", default="real-reference")
 cli_argument_parser.add_argument("-t", "--time", default=0.3, type=float)
 cli_argument_parser.add_argument(
     "-o", "--oversampling", default=16, type=float)
 cli_argument_parser.add_argument("-f", "--frequency", default=200, type=float)
-cli_argument_parser.add_argument("-b", "--bands", default=24, type=float)
+cli_argument_parser.add_argument("-b", "--bands", default=48, type=float)
 cli_argument_parser.add_argument("-x", "--speakers", default=1, type=int)
 cli_argument_parser.add_argument("--distance", default=2.0, type=int)
 cli_argument_parser.add_argument(
@@ -78,7 +78,9 @@ testing_frequencies = get_octaval_center_frequencies(
 # -- SELECT SCENE --
 scene: Scene = None
 if arguments.scene == "real-reference":
-  scene = RealLifeRoomScene(parameters, True)
+  scene = RealLifeRoomScene(parameters, True, False)
+if arguments.scene == "real-reference-furniture":
+  scene = RealLifeRoomScene(parameters, True, True)
 if arguments.scene == "real-scene":
   scene = RealLifeRoomScene(parameters)
 if arguments.scene == "bedroom":
@@ -114,7 +116,7 @@ log.setLevel(LOG_LEVEL)
 logFormatter = logging.Formatter(
     "%(asctime)s [%(levelname)-5.5s] - %(message)s")
 
-output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {scene.__class__.__name__} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}o-{OCTAVE_BANDS}b-{SPEAKERS}x]'
+output_uid = f'{datetime.now().strftime("%Y-%m-%d %H_%M_%S")} {arguments.scene} [{SIMULATED_TIME*1000:.0f}ms-{MAX_FREQUENCY}f-{OVERSAMPLING}o-{OCTAVE_BANDS}b-{SPEAKERS}x]'
 
 if OUTPUT_FILE_LOGS:
   fileHandler = logging.FileHandler(

@@ -5,12 +5,13 @@ from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 
 
 class RealLifeRoomScene(Scene):
-  def __init__(self, parameters: SimulationParameters, reference_values=False) -> None:
+  def __init__(self, parameters: SimulationParameters, reference_values=False, with_furniture=True) -> None:
     super().__init__(parameters)
     self.width = 4.4
     self.height = 2.7
     self.depth = 3.32
     self.reference_values = reference_values
+    self.with_furniture = with_furniture
     self.shape = (self.width, self.height, self.depth)
 
   def mark_regions(self) -> None:
@@ -40,7 +41,7 @@ class RealLifeRoomScene(Scene):
       self.grid.edge_betas.width_min = hard_wall
       self.grid.edge_betas.width_max = hard_wall
 
-    if not self.reference_values:
+    if self.with_furniture:
       #  ---- OBJECTS -----
       # TV
       self.grid.fill_region(

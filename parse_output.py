@@ -86,33 +86,39 @@ for w in range(grid.width_parts):
       value_map_visible[w, d, h] = is_source
 
 # chart
-plt.style.use(os.path.join(file_dir, './styles/paper.mplstyle'))
+plt.style.use(os.path.join(file_dir, './styles/poster.mplstyle'))
 fig = plt.gcf()
-fig.set_dpi(200)
-fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)
-axes_shape = (5, 5)
+fig.set_dpi(300)
+fig.set_size_inches(1920/fig.get_dpi(), 860/fig.get_dpi(), forward=True)
+# axes_shape = (2, 3)
+# axes_shape = (4, 3)
+
 # axis_spl_all = plt.subplot2grid(axes_shape, (0, 0))
 # axis_scores = plt.subplot2grid(axes_shape, (0, 0))
-axis_best_worst = plt.subplot2grid(axes_shape, (0, 0), colspan=2)
-axis_boxplot_spl = plt.subplot2grid(axes_shape, (0, 2))
-axis_floor_map = plt.subplot2grid(axes_shape, (1, 0), projection='3d')
-axis_site_map = plt.subplot2grid(axes_shape, (1, 1), projection='3d')
-axis_value_map = plt.subplot2grid(axes_shape, (1, 2), projection='3d', rowspan=3, colspan=3)
+axis_best_worst = plt.subplot2grid((1, 1), (0, 0), colspan=4, rowspan=3)
+# axis_boxplot_spl = plt.subplot2grid(axes_shape, (0, 2))
+# axis_floor_map = plt.subplot2grid(axes_shape, (3, 0), projection='3d')
+# axis_site_map = plt.subplot2grid(axes_shape, (3, 1), projection='3d')
+# axis_value_map = plt.subplot2grid(
+#     axes_shape, (1, 2), projection='3d', rowspan=3, colspan=3)
+# axis_value_map = plt.subplot2grid(axes_shape, (3, 2), projection='3d')
 
 # axis_spl_all.set_title("SPL (dB) values for all positions")
 # axis_scores.set_title("Scores per index")
-axis_best_worst.set_title("Comparison of SPL of best and worst position")
-axis_boxplot_spl.set_title("Range of SPL values")
-axis_floor_map.set_title("Solid objects")
-axis_site_map.set_title("Source and listener locations")
-axis_value_map.set_title("Flatness of frequency response")
+axis_best_worst.set_title(
+    "Comparison of optimal and least optimal frequency response")
+# axis_boxplot_spl.set_title("Range of SPL values")
+# axis_floor_map.set_title("Solid objects")
+# axis_site_map.set_title("Source and listener locations")
+# axis_value_map.set_title("Flatness of frequency response")
 
-for ax in [axis_floor_map, axis_site_map, axis_value_map]:
-  ax.set_ylabel("Depth index")
-  ax.set_xlabel("Width index")
-  ax.set_zlabel("Height index")
+# for ax in [axis_floor_map, axis_site_map, axis_value_map]:
+#   ax.set_ylabel("Depth index")
+#   ax.set_xlabel("Width index")
+# ax.set_zlabel("Height index")
 
 frequencies: List[float] = []
+frequencies_div = None
 max_per_frequency = []
 sum_per_frequency = []
 min_per_frequency = []
@@ -132,6 +138,7 @@ max_spl_overall = -float('inf')
 min_spl_overall = float('inf')
 min_value = float('inf')
 best_set = []
+best_set_index = -1
 worst_set = []
 location_map = {}
 band_map = {}
@@ -143,6 +150,7 @@ for i, row in enumerate(reader):
   _, index, w_i, w_m, h_i, h_m, d_i, d_m, dev, spl, _, *bands = float_row
   if i == 0:
     frequencies = bands
+    frequencies_div = np.diff(bands, n=1)
     for i, _ in enumerate(bands):
       # min, max, sum
       max_per_frequency.append(-float('inf'))
@@ -151,8 +159,12 @@ for i, row in enumerate(reader):
       values_per_frequency.append([])
     continue
   derrivative = np.diff(bands, n=1)
-  value = np.sum(np.power(derrivative, 2))
+  power = np.power(derrivative, 2)
+  power_x_df = np.divide(power, frequencies_div)
+  # derrivative = np.gradient(bands, edge_order=2)
+  value = np.sum(power)
   # value = np.sum(np.abs(derrivative))
+  # bands = [0] + list(np.power(derrivative, 2))
   if value == 0.0:
     continue
   count += 1
@@ -172,6 +184,7 @@ for i, row in enumerate(reader):
 
   if value == min_value:
     best_set = bands
+    best_set_index = i
 
   # print(bands)
   # axis_spl_all.plot(frequencies, bands)
@@ -211,53 +224,77 @@ csv_file.close()
 
 # axis_scores.plot(indexes, value_index, "-")
 
-boxplot = axis_boxplot_spl.boxplot(
-    values_per_frequency, positions=frequencies, sym="", meanline=True)
+# boxplot = axis_boxplot_spl.boxplot(
+#     values_per_frequency, positions=frequencies, sym="", meanline=True)
 
-boxmedians = []
-for medline in boxplot['medians']:
-  linedata = medline.get_ydata()
-  median = linedata[0]
-  boxmedians.append(median)
-# avg_per_frequency = list(map(lambda x: x / count, sum_per_frequency))
-# medians = list(map(lambda x: x / count, sum_per_frequency))
-axis_boxplot_spl.plot(frequencies, boxmedians, "-", label="Median SPL")
-axis_boxplot_spl.legend()
+# boxmedians = []
+# for medline in boxplot['medians']:
+#   linedata = medline.get_ydata()
+#   median = linedata[0]
+#   boxmedians.append(median)
+# # avg_per_frequency = list(map(lambda x: x / count, sum_per_frequency))
+# # medians = list(map(lambda x: x / count, sum_per_frequency))
+# axis_boxplot_spl.plot(frequencies, boxmedians, "-", label="Median SPL")
+# axis_boxplot_spl.legend()
 
-axis_best_worst.plot(frequencies, best_set, "-",
-                     label="Flattest frequency response")
+# axis_best_worst.plot(frequencies, max_per_frequency, "--",
+#                      label="Maximal SPL per frequency", lw=0.5)
+# axis_best_worst.plot(frequencies, min_per_frequency, "--", lw=0.5,
+#                      label="Minimal SPL per frequency")
+axis_best_worst.fill_between(
+    frequencies, max_per_frequency, min_per_frequency, alpha=0.15, color="k")
+mean_value = np.mean(best_set)
+
+# print("best pos", location_map[best_set_index])
+# avg_spl = grid.get_average_spl_for_source(location_map[best_set_index])
+# axis_best_worst.axhline(avg_spl,  lw=0.5,
+#                         ls='--', color='k', alpha=0.4)
+
+axis_best_worst.axhline(mean_value,  lw=0.5,
+                        ls='--', color='k', alpha=0.4)
+
 axis_best_worst.plot(frequencies, worst_set, "-",
-                     label="Least flat frequency response")
-axis_best_worst.plot(frequencies, max_per_frequency, "--",
-                     label="Maximal SPL per frequency")
-axis_best_worst.plot(frequencies, min_per_frequency, "--",
-                     label="Minimal SPL per frequency")
-axis_best_worst.legend()
+                     label="Least optimal frequency response", lw=0.9)
+axis_best_worst.plot(frequencies, best_set, "-",
+                     label="Optimal frequency response")
+axis_best_worst.legend(ncol=2, fontsize="small", loc="lower left")
 
-base_map_colors = plt.cm.viridis(base_map)
-axis_floor_map.voxels(base_map_visible, alpha=0.8, facecolors=base_map_colors)
-axis_site_map.voxels(site_map_visible, alpha=0.8, facecolors=site_map)
+room_modes = scene.get_room_modes()
+for (modal_frequency, axis_type) in room_modes:
+  if modal_frequency > frequencies[-1]:
+    continue
 
-min_max_range = max_value - min_value
-normalized_value_map = 1 - (value_map - min_value) / min_max_range
-value_map_colors = plt.cm.RdYlGn(normalized_value_map)
+  axis_best_worst.axvline(modal_frequency, lw=0.5,
+                          ls='--', color='k', alpha=0.4)
 
-axis_value_map.voxels(
-    value_map_visible, facecolors=value_map_colors, alpha=0.5)
+axis_best_worst.set_xlim(20, 200)
+axis_best_worst.set_ylim(np.min(min_per_frequency) *
+                         0.95, np.max(max_per_frequency) * 1.02)
+
+# base_map_colors = plt.cm.viridis(base_map)
+# axis_floor_map.voxels(base_map_visible, alpha=0.8, facecolors=base_map_colors)
+# axis_site_map.voxels(site_map_visible, alpha=0.8, facecolors=site_map)
+
+# min_max_range = max_value - min_value
+# normalized_value_map = 1 - ((value_map - min_value) / min_max_range)
+# value_map_colors = plt.cm.RdYlGn(normalized_value_map)
+
+# axis_value_map.voxels(
+#     value_map_visible, facecolors=value_map_colors, alpha=0.5)
 
 
 # plt.colorbar(axis_floor_map.imshow(base_map, cmap="binary"), ax=axis_floor_map)
 # plt.colorbar(axis_site_map.imshow(site_map), ax=axis_site_map)
 
-for ax in [axis_best_worst, axis_boxplot_spl]:
+# for ax in [axis_best_worst, axis_boxplot_spl]:
+for ax in [axis_best_worst]:
   ax.set_xlabel("Frequency (hz)")
-  ax.set_ylabel("Average equivalent SPL (dB)")
-  ax.set_xscale('log')
-  ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
-  ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+  ax.set_ylabel("Average Equivalent SPL (dB)")
+  # ax.set_xscale('log')
+  # ax.set_xticks([20, 25, 30, 40, 50, 60, 80, 100, 120, 160, 200])
+  # ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
   # ax.set_xlim(20, 200)
   # ax.set_ylim(min_spl_overall * 0.5, 91)
-  ax.relim(())
   ax.autoscale_view()
 
 # axis_scores.autoscale_view()
@@ -265,6 +302,6 @@ for ax in [axis_best_worst, axis_boxplot_spl]:
 
 plt.tight_layout(pad=2)
 if should_export:
-  plt.savefig(export_path, dpi=300)
-else:
-  plt.show()
+  plt.savefig(export_path, dpi=600)
+# else:
+plt.show()

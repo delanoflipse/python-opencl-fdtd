@@ -8,5 +8,9 @@ image.cmap: seismic
 # text.color: white
 # axes.labelcolor: white
 savefig.transparent: True
+font.family: Roboto
 # savefig.facecolor: white
 # savefig.edgecolor: black
+
+# axes.prop_cycle: cycler('color', ['0066A3', '00A390', 'C4322F', 'F0BD3C'])
+axes.prop_cycle: cycler('color', ['00A390', '0066A3', 'C4322F', 'F0BD3C'])

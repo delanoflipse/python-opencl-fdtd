@@ -7,6 +7,7 @@ from matplotlib.animation import FuncAnimation
 from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from lib.parameters import SimulationParameters
 from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from lib.scene.LShapedRoomScene import LShapedRoomScene
 from lib.simulation import Simulation
 
 ITERATIONS_PER_STEP: int = 1
@@ -35,19 +36,20 @@ recalc_axis = [ax_val, ax_rec, ax_max, ax_fft_sig, ax_fft_rec, ax_an_db]
 
 parameters = SimulationParameters()
 # parameters.set_oversampling(16)
-parameters.set_max_frequency(400)
-parameters.set_signal_frequency(400.0)
+parameters.set_max_frequency(200.0)
+parameters.set_signal_frequency(50.0)
 # parameters.set_signal_frequency(62.0)
-parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
+# parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
 # parameters.set_scheme(1.0, 1 / 4, 0.0)  # CCP
 # parameters.set_scheme(1.0, 1.0 / 2.0, 1.0 / 4.0)  # OCTO
 # parameters.set_scheme(1 / math.sqrt(3), 0.2034, 0.0438)  # IDWM
 
-scene = ShoeboxReferenceScene(parameters)
+# scene = ShoeboxReferenceScene(parameters)
+scene = LShapedRoomScene(parameters)
 
 grid = scene.build()
-# grid.select_source_locations([grid.source_set[0]])
-grid.select_source_locations([grid.pos(2.0, scene.height / 2, 2.0)])
+grid.select_source_locations([grid.source_set[0]])
+# grid.select_source_locations([grid.pos(2.0, scene.height / 2, 2.0)])
 # grid.select_source_locations([grid.pos(0.0, scene.height / 2, 0.0)])
 
 # SLICE_HEIGHT = grid.scale(1.32)
@@ -81,7 +83,7 @@ max_db_data = []
 
 temp_slice = np.ndarray(shape=(grid.width_parts, grid.depth_parts))
 cmap = plt.cm.seismic.copy()
-cmap.set_bad('black', 1.0)
+cmap.set_bad('#888888', 1.0)
 cmap_spl = plt.cm.OrRd.copy()
 cmap_spl.set_bad('black', 1.0)
 pressure_image = ax_sim.imshow(temp_slice, cmap=cmap)
@@ -127,7 +129,8 @@ fig.tight_layout()
 
 def animate(i) -> None:
   global last_sim_maximum, last_an_maximum
-  # if sim.time > 0.01:
+  # if sim.time > 0.009:
+  # if sim.time > 0.0045:
   #   return
   sim.step(ITERATIONS_PER_STEP)
 
