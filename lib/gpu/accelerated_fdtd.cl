@@ -293,8 +293,8 @@ __kernel void analysis_step(__global double *pressure,
   // size_t pres_i = i * size_a + 0;
   size_t rms_i = i * size_a + 1;
   size_t leq_i = i * size_a + 2;
-  // size_t ewma_i = i * size_a + 3;
-  // size_t ewma_db_i = i * size_a + 4;
+  size_t ewma_i = i * size_a + 3;
+  size_t ewma_db_i = i * size_a + 4;
 
   char geometry_type = geometry[i];
 
@@ -331,9 +331,9 @@ __kernel void analysis_step(__global double *pressure,
     analysis[leq_i] = rms_value > 0 ? 10.0 * log10(rms_value) : 0;
 
     // TODO: enable again if needed
-    // double current_ewma = analysis[ewma_i];
-    // double ewma = alpha * rms_addition + (1 - alpha) * current_ewma;
-    // analysis[ewma_i] = ewma;
-    // analysis[ewma_db_i] = ewma > 0 ? 10.0 * log10(ewma) : 0;
+    double current_ewma = analysis[ewma_i];
+    double ewma = alpha * rms_addition + (1 - alpha) * current_ewma;
+    analysis[ewma_i] = ewma;
+    analysis[ewma_db_i] = ewma > 0 ? 10.0 * log10(ewma) : 0;
   }
 }

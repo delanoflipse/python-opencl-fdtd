@@ -23,7 +23,7 @@ from lib.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
-parameters.set_oversampling(32)
+parameters.set_oversampling(16)
 parameters.set_max_frequency(200)
 # parameters.set_scheme(1 / math.sqrt(3), 0.0, 0.0)  # SLF
 # parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB

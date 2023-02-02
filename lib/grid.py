@@ -372,7 +372,7 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
         neighbours[w, h, d] = neighour_flags
 
 
-# @njit(parallel=True)
+@njit(parallel=True)
 def populate_inner_betas(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta, d1: float, d2: float, d3: float) -> None:
   """Set neighbour flags for geometry"""
   points: List[Tuple[int, int, int, float]] = [
