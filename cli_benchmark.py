@@ -12,6 +12,8 @@ cli_argument_parser.add_argument("-s", "--steps", default=2 ** 3, type=int)
 cli_argument_parser.add_argument(
     "-o", "--oversampling", default=16, type=float)
 cli_argument_parser.add_argument("-v", "--volume", default=50, type=float)
+cli_argument_parser.add_argument(
+    "--precision", default=None, choices=["float", "double"])
 
 arguments = cli_argument_parser.parse_args()
 print(arguments)
@@ -21,6 +23,8 @@ step_count = arguments.steps
 params = SimulationParameters()
 params.set_max_frequency(200)
 params.set_oversampling(arguments.oversampling)
+if arguments.precision is not None:
+  params.set_precision(arguments.precision)
 scene = VolumetricScene(params, arguments.volume)
 
 grid = scene.build()

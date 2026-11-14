@@ -47,6 +47,8 @@ cli_argument_parser.add_argument(
 cli_argument_parser.add_argument(
     "--nologs", default=False, action="store_true")
 cli_argument_parser.add_argument("--nocsv", default=False, action="store_true")
+cli_argument_parser.add_argument(
+    "--precision", default=None, choices=["float", "double"])
 
 arguments = cli_argument_parser.parse_args()
 
@@ -69,6 +71,8 @@ print(arguments)
 parameters = SimulationParameters()
 parameters.set_oversampling(OVERSAMPLING)
 parameters.set_max_frequency(MAX_FREQUENCY)
+if arguments.precision is not None:
+  parameters.set_precision(arguments.precision)
 # parameters.set_scheme(1.0, 1 / 4, 1 / 16)
 
 runtime_steps = int(SIMULATED_TIME / parameters.dt)

@@ -42,6 +42,10 @@ There are a number of scripts in the root folder that apply the simulation for d
 - **Headless scripts:**
 - `cli_benchmark.py` and `cli_run.py` are used to run a headless experiment with different parameters.
 
+### Precision
+
+The pressure field is simulated in single precision (`float`) by default; the RMS / Leq accumulation is always double precision. Single precision stays within ~0.004 dB Leq of double precision up to an oversampling of 128. In decaying fields it leaves a round-off noise floor of roughly 1e-7 times the source amplitude, which shows up when a plot autoscales to a field that has decayed below it. For full double precision, call `parameters.set_precision("double")`, or pass `--precision double` to `cli_run.py` / `cli_benchmark.py`.
+
 ### Run on the DPHC
 
 The script in `cli_run.py` can be used with `jobs/run_script.sh` to run on the DHPC. To run the script:
