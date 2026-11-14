@@ -7,8 +7,15 @@ from matplotlib.animation import FuncAnimation
 from fdtd.styles import use_style
 from fdtd.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
 from fdtd.parameters import SimulationParameters
-from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
+from fdtd.scenes import SCENES, create_scene
 from fdtd.simulation import Simulation
+import argparse
+
+cli_argument_parser = argparse.ArgumentParser(
+    description="Run a scene and visualise a horizontal slice of the field")
+cli_argument_parser.add_argument(
+    "-s", "--scene", default="shoebox", choices=SCENES)
+arguments = cli_argument_parser.parse_args()
 
 ITERATIONS_PER_STEP: int = 1
 
@@ -43,7 +50,7 @@ parameters.set_scheme(1.0, 1 / 4, 1 / 16)  # IWB
 # parameters.set_scheme(1.0, 1.0 / 2.0, 1.0 / 4.0)  # OCTO
 # parameters.set_scheme(1 / math.sqrt(3), 0.2034, 0.0438)  # IDWM
 
-scene = ShoeboxReferenceScene(parameters)
+scene = create_scene(arguments.scene, parameters)
 
 grid = scene.build()
 # grid.select_source_locations([grid.source_set[0]])
