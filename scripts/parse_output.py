@@ -1,7 +1,5 @@
 import csv
 import math
-import os
-import sys
 import argparse
 from pathlib import Path
 import matplotlib
@@ -13,21 +11,21 @@ import numpy as np
 from fdtd.styles import use_style
 from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 from fdtd.parameters import SimulationParameters
-from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
+from fdtd.scenes import SCENES, create_scene
 
-if len(sys.argv) == 1:
-  print('No file given. Usage: python parse_output.py <path/to/output.csv>')
-  sys.exit()
-
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+    description="Summarise the CSV output of `fdtd run`")
 parser.add_argument("file_path", type=Path)
 parser.add_argument("--export", action=argparse.BooleanOptionalAction)
+parser.add_argument("-s", "--scene", default="shoebox", choices=SCENES,
+                    help="scene the CSV was produced with")
+parser.add_argument("-o", "--oversampling", default=16, type=float,
+                    help="oversampling the CSV was produced with")
 
 parsed = parser.parse_args()
 should_export = parsed.export
 
-file_dir = os.path.dirname(__file__)
-csv_path = os.path.join(file_dir, parsed.file_path)
+csv_path = str(parsed.file_path)
 export_path = csv_path + ".png"
 print(csv_path)
 
@@ -36,11 +34,10 @@ reader = csv.reader(csv_file, delimiter=',', quotechar='|')
 
 # scene grid
 parameters = SimulationParameters()
-parameters.set_oversampling(16)
+parameters.set_oversampling(parsed.oversampling)
 parameters.set_max_frequency(200)
 
-# scene = OfficeScene(parameters)
-scene = ShoeboxReferenceScene(parameters)
+scene = create_scene(parsed.scene, parameters)
 
 grid = scene.build()
 

@@ -20,7 +20,7 @@ To install with [uv](https://docs.astral.sh/uv/) (installs Python 3.9 and all de
 uv sync
 ```
 
-Then run any script with `uv run`, e.g. `uv run visual_fdtd.py`.
+Then run any script with `uv run`, e.g. `uv run scripts/visual_fdtd.py`.
 
 Alternatively, to install with pip, use:
 
@@ -41,14 +41,14 @@ uv run fdtd run --help                                 # all options and availab
 
 `fdtd run` writes a log, CSV and chart per run to `output/` (override with `--output`). Source positions are ranked by `--deviation spectral` (flatness of the averaged SPL over the bands, the default) or `--deviation spatial` (average per-cell deviation over the listener region).
 
-Interactive scripts in the root folder:
+Interactive scripts live in `scripts/` (run with e.g. `uv run scripts/visual_fdtd.py`):
 
 - `visual_fdtd.py` runs a scene and visualises a slice of the 3d space.
 - `sweep_visual.py` runs a single frequency sweep to determine the frequency response over the listener region.
 - `sources_visual.py` plots the available impulse generators.
-- **Utility scripts:**
-- `parse_output.py` is used to reformat the output of a full run.
-- `display_scene.py` shows a voxelized 3d scene.
+- `display_scene.py` shows a voxelized 3d scene (`--scene`, `--oversampling`).
+- `parse_output.py` summarises the CSV of an `fdtd run` (`uv run scripts/parse_output.py output/<run>.csv --scene office`).
+- `comparison_chart.py` compares simulated and measured responses (needs `fdtd.util`, which is not on this branch).
 
 ### Precision
 
