@@ -21,7 +21,17 @@ class SimulationParameters:
     self.param_a = 0.0
     self.param_b = 0.0
     self.signal_frequency = 200.0
+    # device precision of the pressure field: "float" or "double"
+    # (the RMS / Leq accumulation is always double). float stays within
+    # ~0.004 dB Leq of double up to oversampling 128, but leaves a round-off
+    # noise floor of ~1e-7 times the source amplitude in decaying fields.
+    self.precision = "float"
     self.recalc()
+
+  def set_precision(self, precision: str) -> None:
+    if precision not in ("float", "double"):
+      raise ValueError(f"precision must be 'float' or 'double', not {precision!r}")
+    self.precision = precision
 
   def recalc(self) -> None:
     self.lambda_2 = self.lambda_courant * self.lambda_courant

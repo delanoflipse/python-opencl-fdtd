@@ -1,13 +1,15 @@
-
 import os
-import math
 import pyopencl as cl
 import numpy as np
 
-from lib.physical_constants import RHO
 from ..grid import SimulationGrid
 
 RELATIVE_PROGRAM_FILE = "accelerated_fdtd.cl"
+
+PRECISION_DTYPES = {
+    "float": np.float32,
+    "double": np.float64,
+}
 
 
 class SimulationKernelProgram:
@@ -23,8 +25,12 @@ class SimulationKernelProgram:
     if not grid.is_build:
       raise Exception("Please build the grid before building the program")
 
+    if grid.grid_size >= 2 ** 32:
+      raise Exception("Grid too large: the kernel uses 32-bit cell indices")
+
     params = grid.parameters
     self.parameters = params
+    self.real_dtype = PRECISION_DTYPES[params.precision]
 
     os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
     self.platforms = cl.get_platforms()
@@ -35,17 +41,27 @@ class SimulationKernelProgram:
     r_flag = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
     rw_flag = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
 
-    self.analysis_buffer = cl.Buffer(self.ctx, rw_flag, hostbuf=grid.analysis)
+    # the three pressure buffers rotate roles every step, so all are written
     self.pressure_previous_buffer = cl.Buffer(
-        self.ctx, r_flag, hostbuf=grid.pressure_previous)
-    self.pressure_buffer = cl.Buffer(self.ctx, r_flag, hostbuf=grid.pressure)
+        self.ctx, rw_flag, hostbuf=self.to_device(grid.pressure_previous))
+    self.pressure_buffer = cl.Buffer(
+        self.ctx, rw_flag, hostbuf=self.to_device(grid.pressure))
     self.pressure_next_buffer = cl.Buffer(
-        self.ctx, rw_flag, hostbuf=grid.pressure_next)
+        self.ctx, rw_flag, hostbuf=self.to_device(grid.pressure_next))
+    self.pressure_squared_sum_buffer = cl.Buffer(
+        self.ctx, rw_flag, hostbuf=np.zeros(grid.grid_size, dtype=np.float64))
     self.geometry_buffer = cl.Buffer(self.ctx, r_flag, hostbuf=grid.geometry)
     self.neighbours_buffer = cl.Buffer(
         self.ctx, r_flag, hostbuf=grid.neighbours)
     self.beta_buffer = cl.Buffer(
-        self.ctx, r_flag, hostbuf=grid.beta)
+        self.ctx, r_flag, hostbuf=self.to_device(grid.beta))
+
+    # (previous, current, next) buffers for iteration % 3
+    self.buffer_rotations = [
+        (self.pressure_previous_buffer, self.pressure_buffer, self.pressure_next_buffer),
+        (self.pressure_buffer, self.pressure_next_buffer, self.pressure_previous_buffer),
+        (self.pressure_next_buffer, self.pressure_previous_buffer, self.pressure_buffer),
+    ]
 
     file_directory = os.path.dirname(__file__)
     loc = os.path.join(file_directory, RELATIVE_PROGRAM_FILE)
@@ -53,56 +69,37 @@ class SimulationKernelProgram:
     with open(loc, encoding="utf-8") as file:
       source = file.read()
 
-    prg = cl.Program(self.ctx, source).build()
+    # scheme coefficients are compile-time constants, so unused neighbour
+    # sets are compiled out
+    build_options = [
+        f"-DREAL={params.precision}",
+        f"-DD1={float(params.arg_d1)!r}",
+        f"-DD2={float(params.arg_d2)!r}",
+        f"-DD3={float(params.arg_d3)!r}",
+        f"-DLAMBDA={float(params.lambda_courant)!r}",
+        f"-DUSE_D1={int(params.arg_d1 != 0.0)}",
+        f"-DUSE_D2={int(params.arg_d2 != 0.0)}",
+        f"-DUSE_D3={int(params.arg_d3 != 0.0)}",
+    ]
+    self.cl_program = cl.Program(self.ctx, source).build(options=build_options)
 
-    # compact step kernel
-    self.step_kernel = prg.compact_step
-    self.step_kernel.set_arg(0, self.pressure_previous_buffer)
-    self.step_kernel.set_arg(1, self.pressure_buffer)
-    self.step_kernel.set_arg(2, self.pressure_next_buffer)
-    self.step_kernel.set_arg(3, self.beta_buffer)
-    self.step_kernel.set_arg(4, self.geometry_buffer)
-    self.step_kernel.set_arg(5, self.neighbours_buffer)
+    # Arguments are passed on every call; typed scalars avoid the slow
+    # Kernel.set_arg path for numpy scalars (~18us per call).
+    # args: previous, current, next, betas, geometry, neighbours,
+    #       pressure_squared_sum, size, h_stride, w_stride, signal
+    self.step_kernel = cl.Kernel(self.cl_program, "fdtd_step")
+    self.step_kernel.set_scalar_arg_dtypes(
+        [None] * 7 + [np.uint32] * 3 + [self.real_dtype])
+    self.step_static_args = (
+        self.beta_buffer,
+        self.geometry_buffer,
+        self.neighbours_buffer,
+        self.pressure_squared_sum_buffer,
+        grid.grid_size,
+        grid.depth_parts,
+        grid.depth_parts * grid.height_parts,
+    )
 
-    self.step_kernel.set_arg(6, np.uint32(grid.width_parts))
-    self.step_kernel.set_arg(7, np.uint32(grid.height_parts))
-    self.step_kernel.set_arg(8, np.uint32(grid.depth_parts))
-
-    self.step_kernel.set_arg(9, np.float64(params.lambda_courant))
-    self.step_kernel.set_arg(10, np.float64(0))
-
-    self.scheme_step_kernel = prg.compact_schema_step
-    self.scheme_step_kernel.set_arg(0, self.pressure_previous_buffer)
-    self.scheme_step_kernel.set_arg(1, self.pressure_buffer)
-    self.scheme_step_kernel.set_arg(2, self.pressure_next_buffer)
-    self.scheme_step_kernel.set_arg(3, self.beta_buffer)
-    self.scheme_step_kernel.set_arg(4, self.geometry_buffer)
-    self.scheme_step_kernel.set_arg(5, self.neighbours_buffer)
-
-    self.scheme_step_kernel.set_arg(6, np.uint32(grid.width_parts))
-    self.scheme_step_kernel.set_arg(7, np.uint32(grid.height_parts))
-    self.scheme_step_kernel.set_arg(8, np.uint32(grid.depth_parts))
-
-    self.scheme_step_kernel.set_arg(9, np.float64(params.lambda_courant))
-    self.scheme_step_kernel.set_arg(10, np.float64(params.param_a))
-    self.scheme_step_kernel.set_arg(11, np.float64(params.param_b))
-    self.scheme_step_kernel.set_arg(12, np.float64(params.arg_d1))
-    self.scheme_step_kernel.set_arg(13, np.float64(params.arg_d2))
-    self.scheme_step_kernel.set_arg(14, np.float64(params.arg_d3))
-    self.scheme_step_kernel.set_arg(15, np.float64(params.arg_d4))
-
-    self.scheme_step_kernel.set_arg(16, np.float64(0))
-
-    # analysis step kernel
-    self.analysis_kernel = prg.analysis_step
-
-    self.analysis_kernel.set_arg(0, self.pressure_next_buffer)
-    self.analysis_kernel.set_arg(1, self.analysis_buffer)
-    self.analysis_kernel.set_arg(2, self.geometry_buffer)
-    self.analysis_kernel.set_arg(3, np.uint32(grid.width_parts))
-    self.analysis_kernel.set_arg(4, np.uint32(grid.height_parts))
-    self.analysis_kernel.set_arg(5, np.uint32(grid.depth_parts))
-    self.analysis_kernel.set_arg(6, np.uint32(grid.analysis_values))
-    self.analysis_kernel.set_arg(7, np.float64(RHO))
-    self.analysis_kernel.set_arg(8, np.float64(params.dt))
-    self.analysis_kernel.set_arg(9, np.float64(0))
+  def to_device(self, array: np.ndarray) -> np.ndarray:
+    """Host array in the device precision (no copy if it already matches)"""
+    return np.ascontiguousarray(array, dtype=self.real_dtype)
