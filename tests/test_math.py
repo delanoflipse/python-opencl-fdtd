@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from fdtd.impulse_generators import GENERATORS, create_generator
 from fdtd.math.decibel_weightings import get_a_weighting
 from fdtd.math.octaves import get_octaval_center_frequencies
 
@@ -35,3 +36,16 @@ def test_exclusive_bands_stay_within_the_range():
 ])
 def test_a_weighting_matches_reference_values(frequency, expected_db):
   assert get_a_weighting(frequency) == pytest.approx(expected_db, abs=0.1)
+
+
+@pytest.mark.parametrize("name", sorted(GENERATORS))
+def test_registered_generator_produces_a_signal(name):
+  generator = create_generator(name, 400.0)
+  dt = 1 / 20000
+  values = [generator.generate(i * dt, i) for i in range(int(0.5 / dt))]
+  assert max(abs(v) for v in values) == pytest.approx(1.0, abs=0.01)
+
+
+def test_unknown_generator_is_rejected():
+  with pytest.raises(ValueError, match="Unknown generator"):
+    create_generator("does-not-exist", 400.0)

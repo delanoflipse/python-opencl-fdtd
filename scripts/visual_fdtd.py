@@ -5,7 +5,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from fdtd.styles import use_style
-from fdtd.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from fdtd.impulse_generators import GENERATORS, create_generator
 from fdtd.parameters import SimulationParameters
 from fdtd.scenes import SCENES, create_scene
 from fdtd.simulation import Simulation
@@ -15,16 +15,6 @@ cli_argument_parser = argparse.ArgumentParser(
     description="Run a scene and visualise a horizontal slice of the field")
 cli_argument_parser.add_argument(
     "-s", "--scene", default="shoebox", choices=SCENES)
-
-# signal generators by name, each built from the signal frequency
-GENERATORS = {
-    "monopulse": GaussianMonopulseGenerator,
-    "gaussian-modulated": GaussianModulatedImpulseGenerator,
-    "hann-sine": lambda frequency: WindowModulatedSinoidImpulse(
-        frequency, HannWindow(width=2 / frequency)),
-    "sine": SimpleSinoidGenerator,
-    "dirac": lambda frequency: DiracImpulseGenerator(),
-}
 cli_argument_parser.add_argument(
     "-g", "--generator", default="monopulse", choices=GENERATORS)
 arguments = cli_argument_parser.parse_args()
@@ -79,7 +69,7 @@ SLICE_HEIGHT = grid.scale(scene.height / 2)
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
 
-sim.generator = GENERATORS[arguments.generator](parameters.signal_frequency)
+sim.generator = create_generator(arguments.generator, parameters.signal_frequency)
 
 scene.rebuild()
 sim.sync_read_buffers()

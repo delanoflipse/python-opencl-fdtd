@@ -124,3 +124,25 @@ class DiracImpulseGenerator(ImpulseGenerator):
 
   def generate(self, time: float, iteration: int) -> float:
     return 1.0 if iteration == 0 else 0.0
+
+
+# Generators selectable by name (e.g. from the command line). Each entry
+# builds a generator from the signal frequency.
+GENERATORS = {
+    "monopulse": GaussianMonopulseGenerator,
+    "gaussian-modulated": GaussianModulatedImpulseGenerator,
+    "hann-sine": lambda frequency: WindowModulatedSinoidImpulse(
+        frequency, HannWindow(width=2 / frequency)),
+    "sine": SimpleSinoidGenerator,
+    "dirac": lambda frequency: DiracImpulseGenerator(),
+}
+
+
+def create_generator(name: str, frequency: float) -> ImpulseGenerator:
+  """Instantiate a registered generator by name."""
+  try:
+    factory = GENERATORS[name]
+  except KeyError:
+    raise ValueError(
+        f"Unknown generator '{name}', choose from: {', '.join(GENERATORS)}") from None
+  return factory(frequency)
