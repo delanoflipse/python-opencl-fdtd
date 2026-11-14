@@ -4,17 +4,9 @@ This is project is part of my bachelor thesis for the Computer Science and Engin
 
 ## Requirements
 
-This repository was written for python version 3.9.x
+Python 3.9 or newer and an OpenCL device. Development uses Python 3.12 (`.python-version`).
 
-These packages are required:
-
-- numpy
-- numba
-- scipy
-- matplotlib
-- pyopencl
-
-To install with [uv](https://docs.astral.sh/uv/) (installs Python 3.9 and all dependencies into `.venv`):
+To install with [uv](https://docs.astral.sh/uv/) (installs Python, the `fdtd` package and all dependencies into `.venv`):
 
 ```bash
 uv sync
@@ -25,7 +17,14 @@ Then run any script with `uv run`, e.g. `uv run scripts/visual_fdtd.py`.
 Alternatively, to install with pip, use:
 
 ```bash
-pip install numpy numba scipy pyopencl matplotlib
+pip install -e .
+```
+
+## Development
+
+```bash
+uv run pytest        # tests; the simulation tests are skipped without an OpenCL device
+uv run ruff check    # lint
 ```
 
 ## Run experiment(s)
