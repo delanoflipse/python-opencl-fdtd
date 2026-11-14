@@ -14,7 +14,15 @@ These packages are required:
 - matplotlib
 - pyopencl
 
-To install with pip, use:
+To install with [uv](https://docs.astral.sh/uv/) (installs Python 3.9 and all dependencies into `.venv`):
+
+```bash
+uv sync
+```
+
+Then run any script with `uv run`, e.g. `uv run visual_fdtd.py`.
+
+Alternatively, to install with pip, use:
 
 ```bash
 pip install numpy numba scipy pyopencl matplotlib
