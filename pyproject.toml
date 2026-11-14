@@ -3,18 +3,27 @@ name = "python-opencl-fdtd"
 version = "0.1.0"
 description = "OpenCL accelerated acoustic finite difference simulation"
 readme = "readme.md"
+# 3.9 is kept for the DHPC python module; development uses .python-version
 requires-python = ">=3.9"
+# lower bounds are the oldest versions resolved (and tested) for Python 3.9
 dependencies = [
-    "numpy",
-    "numba",
-    "scipy",
-    "matplotlib",
-    "pyopencl",
+    "numpy>=2.0",
+    "numba>=0.60",
+    "scipy>=1.13",
+    "matplotlib>=3.9",
+    "pyopencl>=2025.1",
+    # needed by pytools (a pyopencl dependency) but not always pulled in
     "siphash24>=1.9",
 ]
 
 [project.scripts]
 fdtd = "fdtd.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.14",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -22,3 +31,22 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fdtd"]
+
+[tool.ruff]
+indent-width = 2
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# scripts keep alternative imports around for switching scenes/generators
+"scripts/*" = ["F401"]
+
+[tool.autopep8]
+indent-size = 2
+max_line_length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

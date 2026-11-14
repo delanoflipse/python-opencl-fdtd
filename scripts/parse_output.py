@@ -121,7 +121,7 @@ values_per_frequency = []
 def as_float(value: str) -> float:
   try:
     return float(value)
-  except:
+  except ValueError:
     return math.nan
 
 

@@ -47,7 +47,6 @@ def main() -> None:
     axis_dbs.set_title("SPL (dB) value")
     zero_set = []
     sum_set = []
-    dbs_set = []
 
     for f in frequencies:
       gen: ImpulseGenerator = generator(f)

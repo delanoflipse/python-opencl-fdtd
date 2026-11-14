@@ -1,5 +1,5 @@
 from fdtd.scenes.base import Scene
-from fdtd.materials import wood_material, carpet_material, glass_material, laminate_material
+from fdtd.materials import wood_material, carpet_material, laminate_material
 from fdtd.parameters import SimulationParameters
 from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 

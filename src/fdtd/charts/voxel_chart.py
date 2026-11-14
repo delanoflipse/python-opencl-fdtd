@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib
-import matplotlib.axes as mpl_axes
-import matplotlib.lines as mpl_lines
 from mpl_toolkits import mplot3d
 
 from fdtd.charts.chart import Chart

@@ -1,5 +1,4 @@
 import itertools
-import math
 from typing import Tuple, List
 
 def get_n_pairs_with_min_distance(locations: List[Tuple[int, int, int]], n_count:int, spacing: float, min_space: float) -> List[List[Tuple[int, int, int]]]:
