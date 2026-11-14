@@ -2,6 +2,7 @@
 import argparse
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from fdtd.charts.voxel_chart import VoxelChart
 from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
@@ -39,30 +40,17 @@ def main() -> None:
 
   chart_walls = VoxelChart(axis_floor_map, shape, "Floor map")
   chart_beta = VoxelChart(axis_beta, shape, "Beta values")
-  cmap = plt.get_cmap()
-  for w in range(grid.width_parts):
-    for d in range(grid.depth_parts):
-      for h in range(grid.height_parts):
-        beta = grid.beta[w, h, d]
-        is_edge = w == 0 or h == 0 or d == 0
-        c = cmap(beta)
+  beta_colors = plt.get_cmap()(grid.beta)
+  is_edge = np.zeros(grid.beta.shape, dtype=bool)
+  is_edge[0, :, :] = is_edge[:, 0, :] = is_edge[:, :, 0] = True
+  chart_beta.set_voxels((grid.beta > 0) & ~is_edge, beta_colors)
 
-        if beta > 0 and not is_edge:
-          chart_beta.set_voxel_visible(w, h, d)
-          chart_beta.set_voxel_color(w, h, d, c)
-
-        if grid.geometry[w, h, d] & WALL_FLAG > 0:
-          chart_walls.set_voxel_visible(w, h, d)
-          chart_walls.set_voxel_color(w, h, d, c)
-          continue
-
-        if grid.geometry[w, h, d] & LISTENER_FLAG > 0:
-          chart_walls.set_voxel_visible(w, h, d)
-          chart_walls.set_voxel_color(w, h, d, [1, 0, 0, 0.4])
-
-        if grid.geometry[w, h, d] & SOURCE_REGION_FLAG > 0:
-          chart_walls.set_voxel_visible(w, h, d)
-          chart_walls.set_voxel_color(w, h, d, [0, 0, 1, 0.4])
+  walls = (grid.geometry & WALL_FLAG) > 0
+  listeners = ((grid.geometry & LISTENER_FLAG) > 0) & ~walls
+  sources = ((grid.geometry & SOURCE_REGION_FLAG) > 0) & ~walls
+  chart_walls.set_voxels(walls, beta_colors)
+  chart_walls.set_voxels(listeners, [1, 0, 0, 0.4])
+  chart_walls.set_voxels(sources, [0, 0, 1, 0.4])
 
   chart_walls.render()
   chart_beta.render()

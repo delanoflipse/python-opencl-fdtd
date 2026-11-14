@@ -9,6 +9,7 @@ from typing import List
 
 import numpy as np
 from fdtd.styles import use_style
+from fdtd.charts.voxel_chart import draw_voxels
 from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 from fdtd.parameters import SimulationParameters
 from fdtd.scenes import SCENES, create_scene
@@ -233,14 +234,14 @@ axis_best_worst.plot(frequencies, min_per_frequency, "--",
 axis_best_worst.legend()
 
 base_map_colors = plt.cm.viridis(base_map)
-axis_floor_map.voxels(base_map_visible, alpha=0.8, facecolors=base_map_colors)
-axis_site_map.voxels(site_map_visible, alpha=0.8, facecolors=site_map)
+draw_voxels(axis_floor_map, base_map_visible, alpha=0.8, facecolors=base_map_colors)
+draw_voxels(axis_site_map, site_map_visible, alpha=0.8, facecolors=site_map)
 
 min_max_range = max_value - min_value
 normalized_value_map = 1 - (value_map - min_value) / min_max_range
 value_map_colors = plt.cm.RdYlGn(normalized_value_map)
-axis_value_map.voxels(
-    value_map_visible, facecolors=value_map_colors, alpha=0.5)
+draw_voxels(axis_value_map, value_map_visible,
+            facecolors=value_map_colors, alpha=0.5)
 
 
 # plt.colorbar(axis_floor_map.imshow(base_map, cmap="binary"), ax=axis_floor_map)
