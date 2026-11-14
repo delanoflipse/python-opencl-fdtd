@@ -12,7 +12,7 @@ from fdtd.parameters import SimulationParameters
 SQUARED_REFERENCE_SCALE = 25e8
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def write_analysis(squared_sum: np.ndarray, geometry: np.ndarray, analysis: np.ndarray, rms_index: int, leq_index: int, rms_scale: float, time_elapsed: float) -> None:
   """Convert the per-cell sum of squared pressures into the RMS and Leq analysis values"""
   for i in prange(squared_sum.shape[0]):

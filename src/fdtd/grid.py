@@ -198,7 +198,7 @@ class SimulationGrid:
     self.populate_inner_beta()
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def unset_source_flag(geometry: np.ndarray) -> None:
   """Set the nth source region cell to be the current source"""
   for w in prange(geometry.shape[0]):
@@ -221,7 +221,7 @@ def get_source_locations(geometry: np.ndarray) -> List[Tuple[int, int, int]]:
   return source_set
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def count_locations(geometry: np.ndarray) -> Tuple[int, int]:
   """Count the number of cells that have the SOURCE_REGION_FLAG set"""
   count_src = 0
@@ -236,7 +236,7 @@ def count_locations(geometry: np.ndarray) -> Tuple[int, int]:
   return count_src, count_lis
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
   """Set neighbour flags for geometry"""
   for w in prange(geometry.shape[0]):
@@ -365,7 +365,7 @@ def populate_inner_betas(geometry: np.ndarray, beta: np.ndarray, edge_betas: Gri
   _populate_inner_betas(geometry, beta, NEIGHBOUR_OFFSETS, weights, edges)
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def _populate_inner_betas(geometry: np.ndarray, beta: np.ndarray, offsets: np.ndarray, weights: np.ndarray, edges: np.ndarray) -> None:
   size_w, size_h, size_d = geometry.shape
   for w in prange(size_w):

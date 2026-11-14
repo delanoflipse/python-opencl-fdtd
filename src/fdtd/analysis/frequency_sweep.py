@@ -19,7 +19,7 @@ def frequency_sweep(sim: Simulation) -> np.ndarray:
   return sweep_analysis
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def run_sweep_analysis(step_analysis: np.ndarray, summation: np.ndarray, sum_sqr: np.ndarray, deviation: np.ndarray, ranking: np.ndarray, analysis_value: int, n: int) -> None:
   """Set neighbour flags for geometry"""
   _max = -1e99
@@ -53,7 +53,7 @@ def run_sweep_analysis(step_analysis: np.ndarray, summation: np.ndarray, sum_sqr
         ranking[w, h, d] = r
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def get_avg_dev(standard_deviation: np.ndarray, flags: np.ndarray) -> float:
   """Set neighbour flags for geometry"""
   _sum = 0.0
@@ -77,7 +77,7 @@ def get_avg_dev(standard_deviation: np.ndarray, flags: np.ndarray) -> float:
 
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def get_avg_spl(analytical_values: np.ndarray, flags: np.ndarray, leq_index: int) -> Tuple[float, float, float]:
   """Set neighbour flags for geometry"""
   _sum = 0.0
