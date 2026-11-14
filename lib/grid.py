@@ -155,13 +155,11 @@ class SimulationGrid:
     w_min_int = clamp(self.scale(w_min), 0, self.width_parts - 1)
     w_max_int = clamp(self.scale(w_max), w_min_int + 1, self.width_parts)
 
-    set_beta = geometry_flag & WALL_FLAG > 0
-    for d in range(d_min_int, d_max_int):
-      for h in range(h_min_int, h_max_int):
-        for w in range(w_min_int, w_max_int):
-          self.geometry[w, h, d] |= geometry_flag
-          if set_beta:
-            self.beta[w, h, d] = beta
+    region = (slice(w_min_int, w_max_int), slice(
+        h_min_int, h_max_int), slice(d_min_int, d_max_int))
+    self.geometry[region] |= geometry_flag
+    if geometry_flag & WALL_FLAG > 0:
+      self.beta[region] = beta
 
   def create_grid(self, dtype) -> np.ndarray:
     """Generalised method to create new nd arrays"""
@@ -342,89 +340,72 @@ def populate_neighbours(geometry: np.ndarray, neighbours: np.ndarray) -> None:
         neighbours[w, h, d] = neighour_flags
 
 
-# @njit(parallel=True)
+# Neighbour offsets in the same order as the neighbour bit flags: 6x D1, 12x D2, 8x D3
+NEIGHBOUR_OFFSETS = np.array([
+    # D1
+    (-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, 1), (0, 0, -1),
+    # D2
+    (-1, -1, 0), (-1, 1, 0), (1, 1, 0), (1, -1, 0),
+    (0, -1, -1), (0, -1, 1), (0, 1, 1), (0, 1, -1),
+    (-1, 0, -1), (-1, 0, 1), (1, 0, 1), (1, 0, -1),
+    # D3
+    (-1, -1, -1), (-1, -1, 1), (-1, 1, -1), (-1, 1, 1),
+    (1, -1, -1), (1, -1, 1), (1, 1, -1), (1, 1, 1),
+], dtype=np.int64)
+
+
 def populate_inner_betas(geometry: np.ndarray, beta: np.ndarray, edge_betas: GridEdgeBeta, d1: float, d2: float, d3: float) -> None:
-  """Set neighbour flags for geometry"""
-  points: List[Tuple[int, int, int, float]] = [
-      # D1
-      (-1, 0, 0, d1),
-      (1, 0, 0, d1),
-      (0, -1, 0, d1),
-      (0, 1, 0, d1),
-      (0, 0, 1, d1),
-      (0, 0, -1, d1),
-      # D2
-      (-1, -1, 0, d2),
-      (-1, 1, 0, d2),
-      (1, 1, 0, d2),
-      (1, -1, 0, d2),
-      (0, -1, -1, d2),
-      (0, -1, 1, d2),
-      (0, 1, 1, d2),
-      (0, 1, -1, d2),
-      (-1, 0, -1, d2),
-      (-1, 0, 1, d2),
-      (1, 0, 1, d2),
-      (1, 0, -1, d2),
-      # D3
-      (-1, -1, -1, d3),
-      (-1, -1, 1, d3),
-      (-1, 1, -1, d3),
-      (-1, 1, 1, d3),
-      (1, -1, -1, d3),
-      (1, -1, 1, d3),
-      (1, 1, -1, d3),
-      (1, 1, 1, d3),
-  ]
+  """Set the beta of every non-wall cell to the stencil-weighted average beta of its wall/edge neighbours"""
+  weights = np.abs(np.array([d1] * 6 + [d2] * 12 + [d3] * 8, dtype=np.float64))
+  edges = np.array([
+      edge_betas.width_min, edge_betas.width_max,
+      edge_betas.height_min, edge_betas.height_max,
+      edge_betas.depth_min, edge_betas.depth_max,
+  ], dtype=np.float64)
+  _populate_inner_betas(geometry, beta, NEIGHBOUR_OFFSETS, weights, edges)
 
-  for w in prange(geometry.shape[0]):
-    for h in prange(geometry.shape[1]):
-      for d in prange(geometry.shape[2]):
-        reflection_count = 0
-        beta_average = 0
-        for point in points:
-          (_w, _h, _d, fac) = point
-          pos_w = w + _w
-          pos_h = h + _h
-          pos_d = d + _d
-          abs_fac = abs(fac)
 
-          if abs_fac == 0.0:
+@njit(parallel=True)
+def _populate_inner_betas(geometry: np.ndarray, beta: np.ndarray, offsets: np.ndarray, weights: np.ndarray, edges: np.ndarray) -> None:
+  size_w, size_h, size_d = geometry.shape
+  for w in prange(size_w):
+    for h in range(size_h):
+      for d in range(size_d):
+        # walls are only read here, never written, so the loop is race free and
+        # repeated rebuilds give the same result
+        if geometry[w, h, d] & WALL_FLAG > 0:
+          continue
+
+        reflection_count = 0.0
+        beta_sum = 0.0
+        for p in range(offsets.shape[0]):
+          weight = weights[p]
+          if weight == 0.0:
             continue
+
+          pos_w = w + offsets[p, 0]
+          pos_h = h + offsets[p, 1]
+          pos_d = d + offsets[p, 2]
 
           if pos_w <= 0:
-            beta_average += edge_betas.width_min * abs_fac
-            reflection_count += abs_fac
+            neighbour_beta = edges[0]
+          elif pos_w >= size_w - 1:
+            neighbour_beta = edges[1]
+          elif pos_h <= 0:
+            neighbour_beta = edges[2]
+          elif pos_h >= size_h - 1:
+            neighbour_beta = edges[3]
+          elif pos_d <= 0:
+            neighbour_beta = edges[4]
+          elif pos_d >= size_d - 1:
+            neighbour_beta = edges[5]
+          elif geometry[pos_w, pos_h, pos_d] & WALL_FLAG > 0:
+            neighbour_beta = beta[pos_w, pos_h, pos_d]
+          else:
             continue
 
-          if pos_w >= geometry.shape[0] - 1:
-            beta_average += edge_betas.width_max * abs_fac
-            reflection_count += abs_fac
-            continue
+          beta_sum += neighbour_beta * weight
+          reflection_count += weight
 
-          if pos_h <= 0:
-            beta_average += edge_betas.height_min * abs_fac
-            reflection_count += abs_fac
-            continue
-
-          if pos_h >= geometry.shape[1] - 1:
-            beta_average += edge_betas.height_max * abs_fac
-            reflection_count += abs_fac
-            continue
-
-          if pos_d <= 0:
-            beta_average += edge_betas.depth_min * abs_fac
-            reflection_count += abs_fac
-            continue
-
-          if pos_d >= geometry.shape[2] - 1:
-            beta_average += edge_betas.depth_max * abs_fac
-            reflection_count += abs_fac
-            continue
-
-          if geometry[pos_w, pos_h, pos_d] & WALL_FLAG > 0:
-            beta_average += beta[pos_w, pos_h, pos_d] * abs_fac
-            reflection_count += abs_fac
-
-        if reflection_count > 0:
-          beta[_w, h, d] = beta_average / reflection_count
+        if reflection_count > 0.0:
+          beta[w, h, d] = beta_sum / reflection_count
