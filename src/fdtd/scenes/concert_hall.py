@@ -1,6 +1,6 @@
-from lib.scene.scene import Scene
-from lib.parameters import SimulationParameters
-from lib.grid import SOURCE_REGION_FLAG
+from fdtd.scenes.base import Scene
+from fdtd.parameters import SimulationParameters
+from fdtd.grid import SOURCE_REGION_FLAG
 
 class ConcertHallScene(Scene):
   def __init__(self, parameters: SimulationParameters) -> None:

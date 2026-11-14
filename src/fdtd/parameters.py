@@ -1,7 +1,7 @@
 """Module Parameters contains all possible impulse generators"""
 import math
 
-from lib.physical_constants import C_AIR
+from fdtd.physical_constants import C_AIR
 
 SQRT_3 = math.sqrt(3)
 EPSILON = 1e-12

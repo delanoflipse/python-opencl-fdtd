@@ -1,7 +1,7 @@
-from lib.scene.scene import Scene
-from lib.materials import wood_material, carpet_material, double_glass_material, metal_material, suspended_ceiling_material, hard_wall_material, cushion_material
-from lib.parameters import SimulationParameters
-from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
+from fdtd.scenes.base import Scene
+from fdtd.materials import wood_material, carpet_material, double_glass_material, metal_material, suspended_ceiling_material, hard_wall_material, cushion_material
+from fdtd.parameters import SimulationParameters
+from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 
 
 class RealLifeRoomScene(Scene):

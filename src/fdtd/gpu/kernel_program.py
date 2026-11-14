@@ -1,4 +1,6 @@
 import os
+from importlib.resources import files
+
 import pyopencl as cl
 import numpy as np
 
@@ -63,11 +65,8 @@ class SimulationKernelProgram:
         (self.pressure_next_buffer, self.pressure_previous_buffer, self.pressure_buffer),
     ]
 
-    file_directory = os.path.dirname(__file__)
-    loc = os.path.join(file_directory, RELATIVE_PROGRAM_FILE)
-    source = ""
-    with open(loc, encoding="utf-8") as file:
-      source = file.read()
+    source = files(__package__).joinpath(
+        RELATIVE_PROGRAM_FILE).read_text(encoding="utf-8")
 
     # scheme coefficients are compile-time constants, so unused neighbour
     # sets are compiled out

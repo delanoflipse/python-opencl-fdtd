@@ -1,7 +1,7 @@
-from lib.scene.scene import Scene
-from lib.materials import metal_material, painted_concrete_material, whiteboard_material, cellulose_material, carpet_material, hard_wood_material
-from lib.parameters import SimulationParameters
-from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
+from fdtd.scenes.base import Scene
+from fdtd.materials import metal_material, painted_concrete_material, whiteboard_material, cellulose_material, carpet_material, hard_wood_material
+from fdtd.parameters import SimulationParameters
+from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 
 
 class OfficeScene(Scene):

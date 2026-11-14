@@ -1,7 +1,7 @@
-from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
-from lib.simulation import Simulation
-from lib.parameters import SimulationParameters
-from lib.impulse_generators import GaussianModulatedImpulseGenerator
+from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
+from fdtd.simulation import Simulation
+from fdtd.parameters import SimulationParameters
+from fdtd.impulse_generators import GaussianModulatedImpulseGenerator
 import numpy as np
 import time
 

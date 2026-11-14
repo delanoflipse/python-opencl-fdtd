@@ -1,6 +1,6 @@
-from lib.scene.scene import Scene
-from lib.parameters import SimulationParameters
-from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
+from fdtd.scenes.base import Scene
+from fdtd.parameters import SimulationParameters
+from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
 
 
 class ShoeboxReferenceScene(Scene):

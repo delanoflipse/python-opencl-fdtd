@@ -10,9 +10,10 @@ import matplotlib.pyplot as plt
 from typing import List
 
 import numpy as np
-from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
-from lib.parameters import SimulationParameters
-from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
+from fdtd.styles import use_style
+from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
+from fdtd.parameters import SimulationParameters
+from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
 
 if len(sys.argv) == 1:
   print('No file given. Usage: python parse_output.py <path/to/output.csv>')
@@ -86,7 +87,7 @@ for w in range(grid.width_parts):
       value_map_visible[w, d, h] = is_source
 
 # chart
-plt.style.use(os.path.join(file_dir, './styles/paper.mplstyle'))
+use_style("paper")
 fig = plt.gcf()
 fig.set_dpi(150)
 fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)

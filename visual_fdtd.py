@@ -4,17 +4,17 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
-from lib.parameters import SimulationParameters
-from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
-from lib.simulation import Simulation
+from fdtd.styles import use_style
+from fdtd.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, HannWindow, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from fdtd.parameters import SimulationParameters
+from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
+from fdtd.simulation import Simulation
 
 ITERATIONS_PER_STEP: int = 1
 
 # get and set style
 file_dir = os.path.dirname(__file__)
-style_location = os.path.join(file_dir, './styles/poster.mplstyle')
-plt.style.use(style_location)
+use_style("poster")
 
 # create subplots
 axes_shape = (3, 4)

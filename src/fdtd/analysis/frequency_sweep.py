@@ -1,9 +1,9 @@
 
 import math
 import numpy as np
-from lib.grid import LISTENER_FLAG
-from lib.impulse_generators import GaussianModulatedImpulseGenerator
-from lib.simulation import Simulation
+from fdtd.grid import LISTENER_FLAG
+from fdtd.impulse_generators import GaussianModulatedImpulseGenerator
+from fdtd.simulation import Simulation
 from numba import njit, prange
 from typing import Tuple
 

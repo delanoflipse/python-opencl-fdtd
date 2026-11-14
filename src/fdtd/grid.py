@@ -6,7 +6,7 @@ import numpy as np
 from numba import njit, prange, float64
 from numba.experimental import jitclass
 
-from lib.parameters import SimulationParameters
+from fdtd.parameters import SimulationParameters
 
 BIT_0 = 1 << 0
 BIT_1 = 1 << 1

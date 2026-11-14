@@ -2,9 +2,9 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.impulse_generators import GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator, ImpulseGenerator
-from lib.math.decibel_weightings import get_a_weighting
-from lib.math.octaves import get_octaval_center_frequencies
+from fdtd.impulse_generators import GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator, ImpulseGenerator
+from fdtd.math.decibel_weightings import get_a_weighting
+from fdtd.math.octaves import get_octaval_center_frequencies
 
 frequencies = get_octaval_center_frequencies(20, 200)
 full_frequencies = get_octaval_center_frequencies(20, 20e3, fraction=3)

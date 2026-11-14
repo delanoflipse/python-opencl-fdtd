@@ -3,10 +3,10 @@ import numpy as np
 
 import pyopencl as cl
 from numba import njit, prange
-from lib.gpu.kernel_program import SimulationKernelProgram
-from lib.grid import WALL_FLAG, SimulationGrid
-from lib.impulse_generators import ImpulseGenerator
-from lib.parameters import SimulationParameters
+from fdtd.gpu.kernel_program import SimulationKernelProgram
+from fdtd.grid import WALL_FLAG, SimulationGrid
+from fdtd.impulse_generators import ImpulseGenerator
+from fdtd.parameters import SimulationParameters
 
 # 1 / p_ref^2 with p_ref = 20 uPa
 SQUARED_REFERENCE_SCALE = 25e8

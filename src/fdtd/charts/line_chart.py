@@ -2,7 +2,7 @@ import matplotlib
 import matplotlib.axes as mpl_axes
 import matplotlib.lines as mpl_lines
 
-from lib.charts.chart import Chart
+from fdtd.charts.chart import Chart
 from typing import Tuple, List
 
 class LineChart(Chart):

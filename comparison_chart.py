@@ -7,16 +7,17 @@ import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.charts.line_chart import LineChart
-from lib.util.parse_rew import parse_rew_file
-from lib.util.parse_output import OutputParser
+from fdtd.styles import use_style
+from fdtd.charts.line_chart import LineChart
+from fdtd.util.parse_rew import parse_rew_file
+from fdtd.util.parse_output import OutputParser
 
-from lib.parameters import SimulationParameters
-from lib.scene.RealLifeRoomScene import RealLifeRoomScene
+from fdtd.parameters import SimulationParameters
+from fdtd.scenes.real_life_room import RealLifeRoomScene
 
 should_export = False
-# plt.style.use(os.path.join('./styles/paper.mplstyle'))
-plt.style.use(os.path.join('./styles/poster.mplstyle'))
+# use_style("paper")
+use_style("poster")
 fig = plt.gcf()
 fig.set_dpi(300)
 fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)

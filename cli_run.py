@@ -1,22 +1,23 @@
 
-from lib.simulation import Simulation
-from lib.scene.scene import Scene
-from lib.scene.BedroomScene import BedroomScene
-from lib.scene.BellBoxScene import BellBoxScene
-from lib.scene.ConcertHallScene import ConcertHallScene
-from lib.scene.CuboidReferenceScene import CuboidReferenceScene
-from lib.scene.LShapedRoomScene import LShapedRoomScene
-from lib.scene.OfficeScene import OfficeScene
-from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
-from lib.scene.StudioRoomScene import StudioRoomScene
-from lib.scene.RealLifeRoomScene import RealLifeRoomScene
+from fdtd.styles import use_style
+from fdtd.simulation import Simulation
+from fdtd.scenes.base import Scene
+from fdtd.scenes.bedroom import BedroomScene
+from fdtd.scenes.bell_box import BellBoxScene
+from fdtd.scenes.concert_hall import ConcertHallScene
+from fdtd.scenes.cuboid_reference import CuboidReferenceScene
+from fdtd.scenes.l_shaped_room import LShapedRoomScene
+from fdtd.scenes.office import OfficeScene
+from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
+from fdtd.scenes.studio_room import StudioRoomScene
+from fdtd.scenes.real_life_room import RealLifeRoomScene
 
-from lib.parameters import SimulationParameters
-from lib.math.octaves import get_octaval_center_frequencies
-from lib.math.decibel_weightings import get_a_weighting
-from lib.impulse_generators import SimpleSinoidGenerator
-from lib.analysis.source_pairs import get_n_pairs_with_min_distance
-from lib.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
+from fdtd.parameters import SimulationParameters
+from fdtd.math.octaves import get_octaval_center_frequencies
+from fdtd.math.decibel_weightings import get_a_weighting
+from fdtd.impulse_generators import SimpleSinoidGenerator
+from fdtd.analysis.source_pairs import get_n_pairs_with_min_distance
+from fdtd.analysis.frequency_sweep import get_avg_dev, get_avg_spl, run_sweep_analysis
 import matplotlib.pyplot as plt
 
 import csv
@@ -178,7 +179,7 @@ deviations = []
 
 # ---- Chart & Axis ----
 # get and set style
-plt.style.use(os.path.join(file_dir, './styles/poster.mplstyle'))
+use_style("poster")
 
 # create subplot axis
 fig = plt.gcf()

@@ -1,8 +1,8 @@
 
-from lib.charts.voxel_chart import VoxelChart
-from lib.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
-from lib.parameters import SimulationParameters
-from lib.scene.RealLifeRoomScene import RealLifeRoomScene
+from fdtd.charts.voxel_chart import VoxelChart
+from fdtd.grid import LISTENER_FLAG, SOURCE_REGION_FLAG, WALL_FLAG
+from fdtd.parameters import SimulationParameters
+from fdtd.scenes.real_life_room import RealLifeRoomScene
 import os
 import matplotlib
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ shape = grid.grid_shape
 
 # chart
 file_dir = os.path.dirname(__file__)
-# plt.style.use(os.path.join(file_dir, './styles/paper.mplstyle'))
+# use_style("paper")
 fig = plt.gcf()
 fig.set_dpi(150)
 fig.set_size_inches(1920/fig.get_dpi(), 1080/fig.get_dpi(), forward=True)

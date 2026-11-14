@@ -2,9 +2,9 @@
 Predefined grids besed on a number of scenarios
 """
 import math
-from lib.grid import SimulationGrid
-from lib.parameters import SimulationParameters
-from lib.physical_constants import C_AIR
+from fdtd.grid import SimulationGrid
+from fdtd.parameters import SimulationParameters
+from fdtd.physical_constants import C_AIR
 
 from typing import Tuple, List
 

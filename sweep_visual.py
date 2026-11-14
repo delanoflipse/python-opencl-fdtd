@@ -9,17 +9,18 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from lib.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
-from lib.charts.line_chart import LineChart
-from lib.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
-from lib.scene.ShoeboxReferenceScene import ShoeboxReferenceScene
-from lib.scene.RealLifeRoomScene import RealLifeRoomScene
-from lib.math.decibel_weightings import get_a_weighting
-from lib.math.octaves import get_octaval_center_frequencies
-from lib.parameters import SimulationParameters
-from lib.scene.StudioRoomScene import StudioRoomScene
-from lib.simulation import Simulation
-from lib.physical_constants import C_AIR
+from fdtd.styles import use_style
+from fdtd.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
+from fdtd.charts.line_chart import LineChart
+from fdtd.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
+from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
+from fdtd.scenes.real_life_room import RealLifeRoomScene
+from fdtd.math.decibel_weightings import get_a_weighting
+from fdtd.math.octaves import get_octaval_center_frequencies
+from fdtd.parameters import SimulationParameters
+from fdtd.scenes.studio_room import StudioRoomScene
+from fdtd.simulation import Simulation
+from fdtd.physical_constants import C_AIR
 
 # ---- Simulation ----
 parameters = SimulationParameters()
@@ -56,7 +57,7 @@ print(f'{runtime_steps} steps per sim, {testing_frequencies.size} frequencies')
 # ---- Chart & Axis ----
 # get and set style
 file_dir = os.path.dirname(__file__)
-plt.style.use(os.path.join(file_dir, './styles/poster.mplstyle'))
+use_style("poster")
 
 # create subplot axis
 axes_shape = (5, 3)
