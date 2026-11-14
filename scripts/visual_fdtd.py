@@ -15,6 +15,18 @@ cli_argument_parser = argparse.ArgumentParser(
     description="Run a scene and visualise a horizontal slice of the field")
 cli_argument_parser.add_argument(
     "-s", "--scene", default="shoebox", choices=SCENES)
+
+# signal generators by name, each built from the signal frequency
+GENERATORS = {
+    "monopulse": GaussianMonopulseGenerator,
+    "gaussian-modulated": GaussianModulatedImpulseGenerator,
+    "hann-sine": lambda frequency: WindowModulatedSinoidImpulse(
+        frequency, HannWindow(width=2 / frequency)),
+    "sine": SimpleSinoidGenerator,
+    "dirac": lambda frequency: DiracImpulseGenerator(),
+}
+cli_argument_parser.add_argument(
+    "-g", "--generator", default="monopulse", choices=GENERATORS)
 arguments = cli_argument_parser.parse_args()
 
 ITERATIONS_PER_STEP: int = 1
@@ -67,15 +79,7 @@ SLICE_HEIGHT = grid.scale(scene.height / 2)
 sim = Simulation(grid=grid, parameters=parameters)
 sim.print_statistics()
 
-sim.generator = GaussianMonopulseGenerator(parameters.signal_frequency)
-# sim.generator = GaussianModulatedImpulseGenerator(parameters.signal_frequency)
-
-# hann_window = HannWindow(
-#     width=2 / parameters.signal_frequency)
-# sim.generator = WindowModulatedSinoidImpulse(
-#     parameters.signal_frequency, hann_window)
-# sim.generator = DiracImpulseGenerator()
-# sim.generator = SimpleSinoidGenerator(parameters.signal_frequency)
+sim.generator = GENERATORS[arguments.generator](parameters.signal_frequency)
 
 scene.rebuild()
 sim.sync_read_buffers()
