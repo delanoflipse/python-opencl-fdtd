@@ -13,6 +13,9 @@ dependencies = [
     "siphash24>=1.9",
 ]
 
+[project.scripts]
+fdtd = "fdtd.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
