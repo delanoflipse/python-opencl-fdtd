@@ -10,6 +10,7 @@ dependencies = [
     "scipy",
     "matplotlib",
     "pyopencl",
+    "siphash24>=1.9",
 ]
 
 [tool.uv]

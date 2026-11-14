@@ -2009,6 +2009,7 @@ dependencies = [
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "siphash24" },
 ]
 
 [package.metadata]
@@ -2018,6 +2019,7 @@ requires-dist = [
     { name = "numpy" },
     { name = "pyopencl" },
     { name = "scipy" },
+    { name = "siphash24", specifier = ">=1.9" },
 ]
 
 [[package]]
