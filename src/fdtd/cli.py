@@ -48,6 +48,15 @@ def _build_parser() -> argparse.ArgumentParser:
   bench.add_argument("-v", "--volume", default=50, type=float,
                      help="volume of the empty cube (m^3)")
   bench.add_argument("--precision", default=None, choices=PRECISIONS)
+
+  web = commands.add_parser(
+      "web", help="interactive viewer in the browser (slow motion and sweep)")
+  web.add_argument("--host", default="127.0.0.1")
+  web.add_argument("-p", "--port", default=8765, type=int)
+  web.add_argument("--no-browser", action="store_true",
+                   help="do not open a browser tab")
+  web.add_argument("-v", "--verbose", action="store_true",
+                   help="log every request")
   return parser
 
 
@@ -84,6 +93,10 @@ def main(argv: Optional[List[str]] = None) -> None:
         volume=arguments.volume,
         precision=arguments.precision,
     )
+  elif arguments.command == "web":
+    from fdtd.web.server import serve
+    serve(host=arguments.host, port=arguments.port,
+          open_browser=not arguments.no_browser, verbose=arguments.verbose)
 
 
 if __name__ == "__main__":

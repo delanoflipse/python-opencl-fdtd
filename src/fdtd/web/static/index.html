@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FDTD Room Viewer</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='3' width='14' height='10' rx='2' fill='none' stroke='%232a78d6' stroke-width='1.5'/%3E%3Cpath d='M3 8q2.5-4 5 0t5 0' fill='none' stroke='%23e34948' stroke-width='1.5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FDTD Room Viewer</div>
+    <nav class="crumbs" id="crumbs">
+      <button data-goto="mode" class="crumb">1 · View</button>
+      <span class="sep">›</span>
+      <button data-goto="params" class="crumb" disabled>2 · Parameters</button>
+      <span class="sep">›</span>
+      <button data-goto="viewer" class="crumb" disabled>3 · Simulation</button>
+    </nav>
+    <div class="device" id="device"></div>
+  </header>
+
+  <div class="error-banner" id="error" hidden>
+    <span id="error-text"></span>
+    <button id="error-close" aria-label="Dismiss">×</button>
+  </div>
+
+  <!-- 1: choose the view -->
+  <main class="screen" id="screen-mode">
+    <h1>What do you want to see?</h1>
+    <div class="mode-cards">
+      <button class="mode-card" data-mode="slowmotion">
+        <span class="mode-title">Slow motion</span>
+        <span class="mode-text">Watch a pulse or tone travel through the room, step by step. Shows the
+          pressure field over time, with play/pause and single steps.</span>
+      </button>
+      <button class="mode-card" data-mode="sweep">
+        <span class="mode-title">Full sweep</span>
+        <span class="mode-text">Simulate a steady sine at each frequency in a range. Shows the sound level
+          per frequency at the listeners and the level pattern (room modes) at every frequency.</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- 2: parameters -->
+  <main class="screen" id="screen-params" hidden>
+    <form id="params-form" class="params" autocomplete="off">
+      <h1 id="params-title">Parameters</h1>
+
+      <section class="card">
+        <h2>Scene</h2>
+        <label class="field wide">
+          <span>Room</span>
+          <select name="scene" id="scene-select"></select>
+        </label>
+        <p class="hint" id="scene-description"></p>
+        <div class="row">
+          <label class="field"><span>Source w (m)</span><input name="source_w" type="number" step="any" min="0"></label>
+          <label class="field"><span>Source h (m)</span><input name="source_h" type="number" step="any" min="0"></label>
+          <label class="field"><span>Source d (m)</span><input name="source_d" type="number" step="any" min="0"></label>
+        </div>
+        <p class="hint">w = width, h = height (up), d = depth. Defaults to the centre of the scene's first source region.</p>
+      </section>
+
+      <section class="card">
+        <h2>Grid</h2>
+        <div class="row">
+          <label class="field"><span>Max frequency (Hz)</span><input name="max_frequency" type="number" step="any" min="1" required></label>
+          <label class="field"><span>Points per wavelength</span><input name="oversampling" type="number" step="any" min="2" required></label>
+          <label class="field"><span>Scheme</span><select name="scheme" id="scheme-select"></select></label>
+          <label class="field"><span>Precision</span><select name="precision" id="precision-select"></select></label>
+          <label class="field"><span>Source type</span><select name="source_type" id="source-type-select"></select></label>
+        </div>
+        <p class="hint">A hard source sets the source cell to the signal (it also reflects, like a small rigid object);
+          a soft source adds the signal to the pressure.</p>
+      </section>
+
+      <section class="card" data-for="slowmotion">
+        <h2>Source signal</h2>
+        <div class="row">
+          <label class="field"><span>Generator</span><select name="generator" id="generator-select"></select></label>
+          <label class="field"><span>Signal frequency (Hz)</span><input name="signal_frequency" type="number" step="any" min="1"></label>
+        </div>
+      </section>
+
+      <section class="card" data-for="sweep">
+        <h2>Frequency sweep</h2>
+        <div class="row">
+          <label class="field"><span>From (Hz)</span><input name="sweep_min" type="number" step="any" min="1"></label>
+          <label class="field"><span>To (Hz)</span><input name="sweep_max" type="number" step="any" min="1"></label>
+          <label class="field"><span>Bands per octave</span><input name="bands" type="number" step="any" min="1"></label>
+          <label class="field"><span>Time per frequency (s)</span><input name="sweep_time" type="number" step="any" min="0.001"></label>
+        </div>
+      </section>
+
+      <section class="card estimate" id="estimate"></section>
+
+      <div class="actions">
+        <button type="button" class="secondary" data-goto="mode">Back</button>
+        <button type="submit" class="primary" id="start-button">Build &amp; start</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- 3: viewer -->
+  <main class="screen viewer" id="screen-viewer" hidden>
+    <div class="viewer-bar">
+      <div class="title-block">
+        <div class="viewer-title" id="viewer-title"></div>
+        <div class="viewer-sub" id="viewer-sub"></div>
+      </div>
+
+      <div class="controls" id="slowmotion-controls" hidden>
+        <button id="play-button" class="primary icon-text" title="Play / pause (space)">▶ Play</button>
+        <button id="step-button" class="secondary" title="Step forward (→)">Step ⏭</button>
+        <label class="inline">Step size
+          <input id="step-size" type="number" min="1" max="100000" value="1">
+          <span class="unit">steps</span>
+        </label>
+        <button id="reset-button" class="secondary" title="Back to t = 0">Reset</button>
+        <div class="readout" id="time-readout"></div>
+      </div>
+
+      <div class="controls" id="sweep-controls" hidden>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progress">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="readout" id="progress-text"></div>
+        <button id="cancel-button" class="secondary">Cancel</button>
+      </div>
+    </div>
+
+    <div class="split">
+      <section class="pane pane-3d">
+        <div class="pane-head">
+          <span class="pane-title">Room</span>
+          <div class="legend3d">
+            <label><input type="checkbox" data-layer="wall" checked><i class="sw sw-wall"></i>Objects</label>
+            <label><input type="checkbox" data-layer="source" checked><i class="sw sw-source"></i>Source regions</label>
+            <label><input type="checkbox" data-layer="listener" checked><i class="sw sw-listener"></i>Listener regions</label>
+          </div>
+        </div>
+        <div class="view3d" id="view3d">
+          <div class="hover-label" id="hover-label" hidden></div>
+        </div>
+        <div class="slice-picker">
+          <div class="segmented" id="axis-picker" role="radiogroup" aria-label="Slice orientation">
+            <button data-axis="h" class="active" title="Horizontal plane, seen from above">Plan (h)</button>
+            <button data-axis="w" title="Vertical plane across the width">Side (w)</button>
+            <button data-axis="d" title="Vertical plane across the depth">Front (d)</button>
+          </div>
+          <input type="range" id="slice-slider" min="0" max="0" value="0" aria-label="Slice position">
+          <span class="slice-value" id="slice-value"></span>
+        </div>
+      </section>
+
+      <section class="pane pane-2d">
+        <div class="pane-head">
+          <span class="pane-title" id="slice-title">Slice</span>
+          <label class="inline small" id="hold-scale-label" hidden>
+            <input type="checkbox" id="hold-scale"> Hold colour scale
+          </label>
+        </div>
+        <div class="slice-wrap">
+          <div class="slice-canvas-box" id="slice-box">
+            <canvas id="slice-canvas"></canvas>
+            <div class="axis-label axis-x" id="axis-x"></div>
+            <div class="axis-label axis-y" id="axis-y"></div>
+            <div class="slice-tooltip" id="slice-tooltip" hidden></div>
+          </div>
+          <div class="colorbar">
+            <span class="cb-max" id="cb-max"></span>
+            <div class="cb-ramp" id="cb-ramp"></div>
+            <span class="cb-min" id="cb-min"></span>
+            <span class="cb-unit" id="cb-unit"></span>
+          </div>
+        </div>
+
+        <div class="sweep-panel" id="sweep-panel" hidden>
+          <div class="freq-picker">
+            <label class="inline">Frequency
+              <input type="range" id="freq-slider" min="0" max="0" value="0">
+            </label>
+            <span class="readout" id="freq-value"></span>
+            <label class="inline small"><input type="checkbox" id="follow-latest" checked> Follow latest</label>
+          </div>
+          <div class="mode-hint" id="mode-hint"></div>
+          <div class="chart-box">
+            <div class="chart-head">
+              <span class="pane-title">Listener level per frequency</span>
+              <div class="chart-legend">
+                <span><i class="ln ln-avg"></i>Average</span>
+                <span><i class="ln ln-band"></i>Min–max</span>
+                <span><i class="ln ln-axial"></i>Axial</span>
+                <span><i class="ln ln-tangential"></i>Tangential</span>
+                <span><i class="ln ln-oblique"></i>Oblique mode</span>
+              </div>
+            </div>
+            <canvas id="chart-canvas"></canvas>
+            <div class="chart-tooltip" id="chart-tooltip" hidden></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
