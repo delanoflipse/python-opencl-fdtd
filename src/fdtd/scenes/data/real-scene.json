@@ -1,0 +1,51 @@
+{
+  "name": "Real-life room",
+  "description": "Measured living room with TV, radiator, whiteboards, poofs and a couch.",
+  "size": [4.4, 2.7, 3.32],
+  "boundaries": {
+    "width_min": "hard_wall",
+    "width_max": "hard_wall",
+    "height_min": "carpet",
+    "height_max": "suspended_ceiling",
+    "depth_min": "double_glass",
+    "depth_max": "hard_wall"
+  },
+  "regions": [
+    {"name": "TV", "type": "wall", "beta": 0.1,
+     "w": [0.07, 0.11], "h": [1.09, "1.09 + 0.71"], "d": [1.05, "1.05 + 1.24"]},
+    {"name": "radiator", "type": "wall", "material": "metal",
+     "w": [0.03, 0.10], "h": [0.15, "0.15 + 0.7"], "d": ["depth - 0.77", "depth - 0.2"]},
+    {"name": "whiteboards", "type": "wall", "beta": 0.1,
+     "w": ["width - 0.02", null], "h": [0.145, null], "d": ["depth - 1.7", null]},
+    {"name": "wood below the whiteboards", "type": "wall", "material": "wood",
+     "w": ["width - 0.03", null], "h": [null, 0.145], "d": [1.05, null]},
+    {"name": "poof 1", "type": "wall", "material": "cushion",
+     "w": [null, 0.46], "h": [null, 0.46], "d": ["depth / 2 - 0.23", "depth / 2 + 0.23"]},
+    {"name": "poof 2", "type": "wall", "material": "cushion",
+     "w": [1.4, "1.4 + 0.46"], "h": [null, 0.46], "d": ["depth - 0.46", null]},
+    {"name": "couch, seat", "type": "wall", "material": "cushion",
+     "w": [1.06, "1.06 + 2.35"], "h": [0.18, "0.18 + 0.22"], "d": [0.1, "0.1 + 0.85"]},
+    {"name": "couch, back rest", "type": "wall", "material": "cushion",
+     "w": ["1.06 + 0.25", "1.06 + 2.35 - 0.48"], "h": ["0.18 + 0.22", "0.18 + 0.22 + 0.3"], "d": [0.1, "0.1 + 0.26"]},
+    {"name": "couch, extra cushion", "type": "wall", "material": "cushion",
+     "w": ["1.06 + 2.35 - 0.48", "1.06 + 2.35"], "h": ["0.18 + 0.22", "0.18 + 0.22 + 0.15"], "d": [0.1, "0.1 + 0.26"]},
+
+    {"name": "between couch and wall", "type": "source",
+     "w": [0.2, "1.06 - 0.4"], "h": [0.2, 0.4], "d": [0.2, 0.5]},
+    {"name": "under the TV", "type": "source",
+     "w": [0.2, 0.5], "h": [0.2, 0.4], "d": [0.2, "1.44 - 0.2"]},
+    {"name": "outer wall, left", "type": "source",
+     "w": ["0.15 + 0.2", "1.4 - 0.4"], "h": [0.2, 0.4], "d": ["depth - 0.5", "depth - 0.2"]},
+    {"name": "outer wall, right", "type": "source",
+     "w": [2.0, "width - 0.2"], "h": [0.2, 0.4], "d": ["depth - 0.5", "depth - 0.2"]},
+    {"name": "below the whiteboards", "type": "source",
+     "w": ["width - 0.5", "width - 0.2"], "h": [0.2, 0.4], "d": ["depth - 1.7 + 0.2", "depth - 0.2"]},
+
+    {"name": "poof 2", "type": "listener",
+     "w": [1.4, "1.4 + 0.46"], "h": [1.0, 1.4], "d": ["depth - 0.46", null]},
+    {"name": "couch", "type": "listener",
+     "w": [1.06, "1.06 + 2.35"], "h": [1.0, 1.4], "d": [0.1, "0.1 + 0.85"]},
+    {"name": "standing", "type": "listener",
+     "w": [0.8, "width - 0.8"], "h": [1.6, 2.0], "d": [1.0, "depth - 0.8"]}
+  ]
+}

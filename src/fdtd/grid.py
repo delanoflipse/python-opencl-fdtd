@@ -147,7 +147,8 @@ class SimulationGrid:
     self.pressure_next.fill(0.0)
     self.analysis.fill(0.0)
 
-  def fill_region(self, w_min=0.0, w_max=float("inf"), h_min=0.0, h_max=float("inf"), d_min=0.0, d_max=float("inf"), geometry_flag=WALL_FLAG, beta=0.5) -> None:
+  def region_slices(self, w_min=0.0, w_max=float("inf"), h_min=0.0, h_max=float("inf"), d_min=0.0, d_max=float("inf")) -> Tuple[slice, slice, slice]:
+    """Grid cells covered by a box in metres; every axis covers at least one cell"""
     d_min_int = clamp(self.scale(d_min), 0, self.depth_parts - 1)
     d_max_int = clamp(self.scale(d_max), d_min_int + 1, self.depth_parts)
     h_min_int = clamp(self.scale(h_min), 0, self.height_parts - 1)
@@ -155,8 +156,11 @@ class SimulationGrid:
     w_min_int = clamp(self.scale(w_min), 0, self.width_parts - 1)
     w_max_int = clamp(self.scale(w_max), w_min_int + 1, self.width_parts)
 
-    region = (slice(w_min_int, w_max_int), slice(
+    return (slice(w_min_int, w_max_int), slice(
         h_min_int, h_max_int), slice(d_min_int, d_max_int))
+
+  def fill_region(self, w_min=0.0, w_max=float("inf"), h_min=0.0, h_max=float("inf"), d_min=0.0, d_max=float("inf"), geometry_flag=WALL_FLAG, beta=0.5) -> None:
+    region = self.region_slices(w_min, w_max, h_min, h_max, d_min, d_max)
     self.geometry[region] |= geometry_flag
     if geometry_flag & WALL_FLAG > 0:
       self.beta[region] = beta

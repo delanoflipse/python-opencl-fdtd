@@ -13,12 +13,10 @@ from fdtd.styles import use_style
 from fdtd.analysis.frequency_sweep import get_avg_spl, run_sweep_analysis
 from fdtd.charts.line_chart import LineChart
 from fdtd.impulse_generators import DiracImpulseGenerator, GaussianModulatedImpulseGenerator, GaussianMonopulseGenerator, WindowModulatedSinoidImpulse, SimpleSinoidGenerator
-from fdtd.scenes.shoebox_reference import ShoeboxReferenceScene
-from fdtd.scenes.real_life_room import RealLifeRoomScene
+from fdtd.scenes import create_scene
 from fdtd.math.decibel_weightings import get_a_weighting
 from fdtd.math.octaves import get_octaval_center_frequencies
 from fdtd.parameters import SimulationParameters
-from fdtd.scenes.studio_room import StudioRoomScene
 from fdtd.simulation import Simulation
 from fdtd.physical_constants import C_AIR
 
@@ -35,8 +33,8 @@ runtime_steps = int(SIM_TIME / parameters.dt)
 testing_frequencies = get_octaval_center_frequencies(20, 200, fraction=96)
 
 # ---- Scene ----
-# scene = ShoeboxReferenceScene(parameters)
-scene = RealLifeRoomScene(parameters, True)
+# scene = create_scene("shoebox", parameters)
+scene = create_scene("real-reference", parameters)
 # -----
 
 grid = scene.build()

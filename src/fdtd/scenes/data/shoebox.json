@@ -1,0 +1,10 @@
+{
+  "name": "Shoebox reference",
+  "description": "Empty rectangular room with a subwoofer in a corner and a listener in the centre.",
+  "size": [5.5, 2.8, 4.0],
+  "boundaries": {"all": 0.1, "height_min": 0.05},
+  "regions": [
+    {"name": "subwoofer", "type": "source", "at": [0.3, 0.15, 0.3]},
+    {"name": "centre", "type": "listener", "at": ["width / 2", "height / 2", "depth / 2"]}
+  ]
+}

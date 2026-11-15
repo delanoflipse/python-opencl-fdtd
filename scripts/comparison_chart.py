@@ -13,7 +13,7 @@ from fdtd.util.parse_rew import parse_rew_file
 from fdtd.util.parse_output import OutputParser
 
 from fdtd.parameters import SimulationParameters
-from fdtd.scenes.real_life_room import RealLifeRoomScene
+from fdtd.scenes import create_scene
 
 should_export = False
 # use_style("paper")
@@ -153,8 +153,8 @@ parameters = SimulationParameters()
 parameters.set_oversampling(20)
 parameters.set_max_frequency(200)
 
-# scene = OfficeScene(parameters)
-scene = RealLifeRoomScene(parameters)
+# scene = create_scene("office", parameters)
+scene = create_scene("real-scene", parameters)
 
 room_modes = scene.get_room_modes()
 for (modal_frequency, axis_type) in room_modes:

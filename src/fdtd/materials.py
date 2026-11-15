@@ -44,3 +44,21 @@ whiteboard_material = SimulatedMaterial(log_interp1d([125, 250], [0.1, 0.16]))
 suspended_ceiling_material = SimulatedMaterial(log_interp1d([125, 250], [0.15, 0.11]))
 hard_wall_material = SimulatedMaterial(log_interp1d([125, 250], [0.04, 0.05]))
 cushion_material = SimulatedMaterial(log_interp1d([125, 250], [0.32, 0.4]))
+
+# Materials selectable by name (e.g. from a scene file)
+MATERIALS = {
+    "wood": wood_material,
+    "painted_concrete": painted_concrete_material,
+    "laminate": laminate_material,
+    "plaster": plaster_material,
+    "glass": glass_material,
+    "double_glass": double_glass_material,
+    "carpet": carpet_material,
+    "cellulose": cellulose_material,
+    "metal": metal_material,
+    "hard_wood": hard_wood_material,
+    "whiteboard": whiteboard_material,
+    "suspended_ceiling": suspended_ceiling_material,
+    "hard_wall": hard_wall_material,
+    "cushion": cushion_material,
+}

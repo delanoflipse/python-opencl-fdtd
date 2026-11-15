@@ -1,0 +1,23 @@
+{
+  "name": "Studio room",
+  "size": [2.9, 2.1, 4.3],
+  "boundaries": {
+    "width_min": "carpet",
+    "width_max": "carpet",
+    "height_min": "laminate",
+    "height_max": 0.5,
+    "depth_min": "carpet",
+    "depth_max": "carpet"
+  },
+  "regions": [
+    {"name": "closet, lower part", "type": "wall", "material": "wood",
+     "w": ["width - 0.5", null], "h": [null, 1.3], "d": [0.45, "0.45 + 2.1"]},
+    {"name": "closet, upper part", "type": "wall", "material": "wood",
+     "w": ["width - 0.5", null], "d": [0.45, "0.45 + 0.6"]},
+    {"name": "subwoofer", "type": "source",
+     "w": ["width - 1.9 + 0.4 - 0.05", "width - 1.9 + 0.4 + 0.05"], "h": [0.2, 0.2],
+     "d": ["depth - 0.22 + 0.05", "depth - 0.22 - 0.05"]},
+    {"name": "listening position", "type": "listener",
+     "w": [0.4, "width - 0.4"], "h": [1.9, 1.5], "d": [0.4, "width - 0.4"]}
+  ]
+}
