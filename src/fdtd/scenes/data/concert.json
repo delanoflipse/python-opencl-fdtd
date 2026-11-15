@@ -1,0 +1,8 @@
+{
+  "name": "Concert hall",
+  "description": "Unfinished: only a source position, no listeners or objects yet.",
+  "size": [40.0, 8.0, 65.0],
+  "regions": [
+    {"name": "source", "type": "source", "at": ["width - 1.45", 1.35, "depth - 0.59"]}
+  ]
+}

@@ -8,7 +8,7 @@ from conftest import requires_opencl
 from fdtd.analysis.frequency_sweep import get_avg_spl
 from fdtd.impulse_generators import SimpleSinoidGenerator
 from fdtd.parameters import SimulationParameters
-from fdtd.scenes import ShoeboxReferenceScene
+from fdtd.scenes import create_scene
 from fdtd.sweep import SweepConfig, run_full_sweep
 
 pytestmark = requires_opencl
@@ -22,7 +22,7 @@ def simulate_leq(precision: str, steps: int = 400) -> float:
   params.set_oversampling(6)
   params.set_precision(precision)
   params.set_signal_frequency(100.0)
-  scene = ShoeboxReferenceScene(params)
+  scene = create_scene("shoebox", params)
   grid = scene.build()
   grid.select_source_locations([grid.source_set[0]])
   sim = Simulation(params, grid)

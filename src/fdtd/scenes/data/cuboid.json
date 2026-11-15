@@ -1,0 +1,10 @@
+{
+  "name": "Cuboid reference",
+  "description": "Empty 7 m cube.",
+  "size": [7.0, 7.0, 7.0],
+  "boundaries": {"all": 0.1},
+  "regions": [
+    {"name": "subwoofer", "type": "source", "at": [0.3, 0.15, 0.15]},
+    {"name": "listener", "type": "listener", "at": [1.33, 1.0, 1.38]}
+  ]
+}

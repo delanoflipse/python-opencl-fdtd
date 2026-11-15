@@ -1,0 +1,11 @@
+{
+  "name": "L-shaped room",
+  "description": "6 m cube with one quarter blocked, fully reflective.",
+  "size": [6.0, 6.0, 6.0],
+  "boundaries": {"all": 0.0},
+  "regions": [
+    {"name": "blocked quarter", "type": "wall", "beta": 0.0, "w": ["width / 2", null], "d": [null, "depth / 2"]},
+    {"name": "source", "type": "source", "at": ["width / 3", "height / 2", "depth / 3"]},
+    {"name": "everywhere", "type": "listener"}
+  ]
+}

@@ -40,6 +40,40 @@ uv run fdtd run --help                                 # all options and availab
 
 `fdtd run` writes a log, CSV and chart per run to `output/` (override with `--output`). Source positions are ranked by `--deviation spectral` (flatness of the averaged SPL over the bands, the default) or `--deviation spatial` (average per-cell deviation over the listener region).
 
+### Web viewer
+
+```bash
+uv run fdtd web            # opens http://localhost:8765/ (--port, --no-browser, --verbose)
+```
+
+Pick a view, then the parameters (scene, grid resolution, scheme, source position and type, signal or sweep range), then explore the result in a split view: the room's regions in 3D with a movable slice (plan, side or front), and that slice in 2D.
+
+- **Slow motion** shows the pressure in the slice. Play/pause, step forward (with a step size) and reset; space and → also work.
+- **Full sweep** runs a steady sine per band centre frequency for the chosen source (the same method as `fdtd run`) with a progress bar, then shows the listener level per frequency against the analytic box modes, and the Leq pattern in the slice for any simulated frequency. Modes show up best in reverberant rooms; try `shoebox-reverberant` with ~1.5 s per frequency.
+
+The browser loads three.js from cdn.jsdelivr.net, so the viewer needs internet access.
+
+### Scenes
+
+Scenes are JSON files in `src/fdtd/scenes/data/`: a room size plus region markers (not voxels), which are voxelised for every grid resolution. `--scene` accepts a bundled name or a path to a `.json` file. The full format is documented in `src/fdtd/scenes/base.py`. A short example:
+
+```json
+{
+  "name": "Bedroom",
+  "size": [3.6, 2.6, 4.2],
+  "boundaries": {"all": "painted_concrete", "height_min": "laminate", "width_min": ["glass", 0.05]},
+  "regions": [
+    {"name": "closet", "type": "wall", "material": "wood", "w": ["width - 0.6", null], "h": [null, 2.0], "d": [0.9, 1.9]},
+    {"name": "speaker", "type": "source", "at": [0.3, 0.2, 0.3]},
+    {"name": "bed", "type": "listener", "w": [1.75, "width - 0.45"], "h": [0.8, 1.3], "d": ["depth - 2.0", null]}
+  ]
+}
+```
+
+Region types are `wall`, `source` (candidate source positions) and `listener` (analysed cells). A box is given per axis (w = width, h = height, d = depth) as `[min, max]` in metres, where a missing axis or `null` bound runs to the room edge; `at` marks a single cell. Coordinates can be expressions over `width`, `height`, `depth` and `dx`. Materials are names from `fdtd.materials.MATERIALS`, a beta value, or a list that is averaged. Regions are applied in order.
+
+### Scripts
+
 Interactive scripts live in `scripts/` (run with e.g. `uv run scripts/visual_fdtd.py`):
 
 - `visual_fdtd.py` runs a scene and visualises a slice of the 3d space.

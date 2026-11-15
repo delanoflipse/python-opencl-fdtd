@@ -4,7 +4,7 @@ from typing import Optional
 
 from fdtd.impulse_generators import GaussianModulatedImpulseGenerator
 from fdtd.parameters import SimulationParameters
-from fdtd.scenes import VolumetricScene, create_scene
+from fdtd.scenes import create_scene, volumetric_scene
 from fdtd.simulation import Simulation
 
 
@@ -22,7 +22,7 @@ def run_benchmark(iterations_per_step: int = 2 ** 13, step_count: int = 2 ** 3,
     params.set_precision(precision)
 
   if scene is None:
-    bench_scene = VolumetricScene(params, volume)
+    bench_scene = volumetric_scene(params, volume)
   else:
     bench_scene = create_scene(scene, params)
     volume = bench_scene.width * bench_scene.height * bench_scene.depth

@@ -1,0 +1,10 @@
+{
+  "name": "Shoebox, reverberant",
+  "description": "The shoebox reference with hard walls (beta 0.02), so individual room modes stand out.",
+  "size": [5.5, 2.8, 4.0],
+  "boundaries": {"all": 0.02},
+  "regions": [
+    {"name": "subwoofer", "type": "source", "at": [0.3, 0.15, 0.3]},
+    {"name": "listening area", "type": "listener", "w": [1.5, "width - 1.5"], "h": [1.0, 1.4], "d": [1.0, "depth - 1.0"]}
+  ]
+}

@@ -6,11 +6,15 @@
 //                       implied by the Laplacian form used below)
 //   LAMBDA              courant number
 //   USE_D1/D2/D3        0 | 1: whether that neighbour set contributes (coefficient != 0)
+//   USE_HYBRID_HARD_SOURCE  0 | 1: soft (additive) or hard source
 #ifndef REAL
 #define REAL double
 #endif
 
+// 1: the source cell is set to the signal (hard), 0: the signal is added (soft)
+#ifndef USE_HYBRID_HARD_SOURCE
 #define USE_HYBRID_HARD_SOURCE 1
+#endif
 
 #define C_D1 ((REAL)(D1))
 #define C_D2 ((REAL)(D2))

@@ -1,0 +1,10 @@
+{
+  "name": "Real-life room (reference)",
+  "description": "The real-life room without furniture, uniform absorption, single source and microphone.",
+  "size": [4.4, 2.7, 3.32],
+  "boundaries": {"all": 0.1},
+  "regions": [
+    {"name": "subwoofer", "type": "source", "at": [1.06, 0.22, "depth / 2"]},
+    {"name": "microphone", "type": "listener", "at": ["width - max(dx * 2, 0.03)", 1.77, "depth - 0.18"]}
+  ]
+}

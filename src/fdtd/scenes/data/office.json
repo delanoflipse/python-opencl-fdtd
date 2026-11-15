@@ -1,0 +1,51 @@
+{
+  "name": "Office",
+  "size": [5.25, 3.0, 5.06],
+  "boundaries": {
+    "width_min": "whiteboard",
+    "width_max": "painted_concrete",
+    "height_min": "carpet",
+    "height_max": "cellulose",
+    "depth_min": "whiteboard",
+    "depth_max": "painted_concrete"
+  },
+  "regions": [
+    {"name": "metal closet (100x45x200)", "type": "wall", "material": "metal",
+     "w": [null, 0.45], "h": [null, 2.0], "d": [1.2, "1.2 + 1"]},
+
+    {"name": "depth inset: concrete below desk height", "type": "wall", "material": "painted_concrete",
+     "h": [null, 0.92], "d": ["depth - 0.29", null]},
+    {"name": "depth inset: wooden sill", "type": "wall", "material": "hard_wood",
+     "h": ["0.92 - 0.19", 0.92], "d": ["depth - 0.54", null]},
+    {"name": "depth inset: upper concrete", "type": "wall", "material": "painted_concrete",
+     "h": ["height - 0.2", null], "d": ["depth - 0.29", null]},
+    {"name": "depth inset: concrete beside the glass", "type": "wall", "material": "painted_concrete",
+     "w": [1.0, null], "d": ["depth - 0.29", null]},
+
+    {"name": "width inset: wooden sill", "type": "wall", "material": "hard_wood",
+     "w": ["width - 0.54", null], "h": ["0.92 - 0.19", 0.92], "d": [null, "depth - 0.29"]},
+    {"name": "width inset: upper concrete", "type": "wall", "material": "painted_concrete",
+     "w": ["width - 0.54", null], "h": ["height - 0.2", null]},
+    {"name": "width inset: concrete below the sill", "type": "wall", "material": "painted_concrete",
+     "w": ["width - 0.29", null], "h": [null, 0.92]},
+    {"name": "width inset: concrete wall 1", "type": "wall", "material": "painted_concrete",
+     "w": ["width - 0.29", null], "d": [null, 0.085]},
+    {"name": "width inset: concrete wall 2", "type": "wall", "material": "painted_concrete",
+     "w": ["width - 0.29", null], "d": [1.085, 2.465]},
+    {"name": "width inset: concrete wall 3", "type": "wall", "material": "painted_concrete",
+     "w": ["width - 0.29", null], "d": [3.465, null]},
+
+    {"name": "next to the door", "type": "source",
+     "w": [0.2, "0.45 - 0.2"], "h": [0.2, "0.2 + 0.2"], "d": [0.2, "1.2 - 0.2"]},
+    {"name": "after the closet", "type": "source",
+     "w": [0.2, "0.45 - 0.2"], "h": [0.2, "0.2 + 0.2"], "d": ["2.2 - 0.2", "depth - 0.5 - 0.2"]},
+    {"name": "depth wall, width start", "type": "source",
+     "w": [0.2, "1.2 - 0.2"], "h": [0.2, "0.2 + 0.2"], "d": ["depth - 1.0 + 0.2", "depth - 0.5 - 0.2"]},
+    {"name": "depth wall, width end", "type": "source",
+     "w": ["width - 1.0 + 0.2", "width - 0.5 + 0.2"], "h": [0.2, "0.2 + 0.2"], "d": ["depth - 1.0 + 0.2", "depth - 0.5 - 0.2"]},
+    {"name": "width wall", "type": "source",
+     "w": ["width - 1.0 + 0.2", "width - 0.5 + 0.2"], "h": [0.2, "0.2 + 0.2"], "d": [0.2, "depth - 0.5 - 0.2"]},
+
+    {"name": "desk", "type": "listener", "w": [1, 2], "h": [0.5, 1.5], "d": [2.2, 2.5]}
+  ]
+}

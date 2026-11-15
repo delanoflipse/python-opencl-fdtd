@@ -79,6 +79,7 @@ class SimulationKernelProgram:
         f"-DUSE_D1={int(params.arg_d1 != 0.0)}",
         f"-DUSE_D2={int(params.arg_d2 != 0.0)}",
         f"-DUSE_D3={int(params.arg_d3 != 0.0)}",
+        f"-DUSE_HYBRID_HARD_SOURCE={int(params.hard_source)}",
     ]
     self.cl_program = cl.Program(self.ctx, source).build(options=build_options)
 
