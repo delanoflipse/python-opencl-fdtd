@@ -106,8 +106,12 @@ class Simulation:
     # kwargs["is_blocking"] = is_blocking
     return cl.enqueue_copy(self.program.queue, dest, src, is_blocking=False)
 
-  def step(self, step_count: int = 1) -> None:
-    """Proceed the simulation one or more steps, note: only writes back pressure and analysis values"""
+  def step(self, step_count: int = 1, read_back: bool = True) -> None:
+    """Proceed the simulation one or more steps, note: only writes back pressure and analysis values.
+
+    With read_back=False the host grid is left stale (until a later step reads back),
+    e.g. to advance in chunks without copying the field every chunk.
+    """
     prog = self.program
     queue = prog.queue
     kernel = prog.step_kernel
@@ -139,7 +143,7 @@ class Simulation:
       self.time += dt
       self.iteration += 1
 
-    if current_buffer is not None:
+    if read_back and current_buffer is not None:
       self.read_back(current_buffer)
 
   def read_back(self, current_buffer: cl.Buffer) -> None:

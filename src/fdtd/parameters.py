@@ -26,6 +26,9 @@ class SimulationParameters:
     # ~0.004 dB Leq of double up to oversampling 128, but leaves a round-off
     # noise floor of ~1e-7 times the source amplitude in decaying fields.
     self.precision = "float"
+    # hard: the source cell is set to the signal (it then also reflects like a
+    # pressure-release point); soft: the signal is added to the cell's pressure
+    self.hard_source = True
     self.recalc()
 
   def set_precision(self, precision: str) -> None:
