@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #SBATCH --job-name="fdtd-run"
 #SBATCH --partition=gpu
@@ -10,7 +10,8 @@
 #SBATCH --gres=gpu:1
 
 if [[ $# -eq 0 ]] ; then
-    echo 'Usage: $0 path/to/script.py'
+    echo "Usage: sbatch $0 -m fdtd run [options]"
+    echo "   or: sbatch $0 path/to/script.py [options]"
     echo 'Argument is required!'
     exit 1
 fi
@@ -21,11 +22,12 @@ module load cuda/11.6
 module load openmpi
 module load py-pip
 
-pip install numpy numba scipy pyopencl matplotlib
+# install the fdtd package and its dependencies from the submit directory
+pip install --user --quiet .
 
 previous=$(/usr/bin/nvidia-smi --query-accounted-apps='gpu_utilization,mem_utilization,max_memory_usage,time' --format='csv' | /usr/bin/tail -n '+2')
 
-echo "Running script at location: $1"
-srun python $*
+echo "Running: python $*"
+srun python "$@"
 
 /usr/bin/nvidia-smi --query-accounted-apps='gpu_utilization,mem_utilization,max_memory_usage,time' --format='csv' | /usr/bin/grep -v -F "$previous"
