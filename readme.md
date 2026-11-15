@@ -43,6 +43,8 @@ uv run fdtd run --help                                 # all options and availab
 Interactive scripts live in `scripts/` (run with e.g. `uv run scripts/visual_fdtd.py`):
 
 - `visual_fdtd.py` runs a scene and visualises a slice of the 3d space.
+- `mode_visual.py` runs a scene and shows the field at a single frequency (`-f`) as it builds up, via a running DFT of the FDTD pressure.
+- `frequency_visual.py` solves the steady-state field at a single frequency directly in the frequency domain (`fdtd.frequency_domain`, no time stepping) and shows the room mode shape. Add `--sweep FMIN FMAX` for a clickable frequency response at the receiver; `--beta` overrides the wall absorption.
 - `sweep_visual.py` runs a single frequency sweep to determine the frequency response over the listener region.
 - `sources_visual.py` plots the available impulse generators.
 - `display_scene.py` shows a voxelized 3d scene (`--scene`, `--oversampling`).
